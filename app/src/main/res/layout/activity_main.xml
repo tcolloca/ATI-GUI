@@ -9,8 +9,44 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.itba.atigui.MainActivity">
 
-    <TextView
+    <ImageView
+        android:id="@+id/image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        android:scaleType="fitCenter"
+        android:layout_marginBottom="64dp" />
+
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!" />
+        android:orientation="horizontal"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:gravity="center_vertical">
+        <EditText
+            android:id="@+id/activity_main_x"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="x"
+            android:minWidth="64dp"
+            android:textSize="18sp"
+            android:inputType="number"/>
+
+        <EditText
+            android:id="@+id/activity_main_y"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="y"
+            android:minWidth="64dp"
+            android:textSize="18sp"
+            android:inputType="number"/>
+
+        <Button
+            android:id="@+id/activity_main_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="paint"
+            android:textSize="18sp"/>
+    </LinearLayout>
 </RelativeLayout>

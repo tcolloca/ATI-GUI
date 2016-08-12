@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">atigui</string>
+    <string name="permission_camera_rationale">necesito el external read, wachin</string>
+    <string name="button_allow">allow</string>
+    <string name="button_deny">deny</string>
+    <string name="permission_camera_denied">permission denied</string>
+    <string name="permission_camera_neverask">the app will never ask again</string>
 </resources>
