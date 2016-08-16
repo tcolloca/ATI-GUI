@@ -50,6 +50,7 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
 
     @Override
     public boolean onTouch(View view, MotionEvent event) {
+        if (!hasBitmap()) return false;
         int index = event.getActionIndex();
         int pointerId = event.getPointerId(index);
 
@@ -94,14 +95,15 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
     public void unselectCurrentSelectedPixel() {
         if (currentPixelSelection == null) return;
         undoPixelSelection(currentPixelSelection);
-        imageListener.onPixelUnselected();
         currentPixelSelection = null;
+        imageListener.onPixelUnselected();
     }
 
-    public void clearBitmap() {
+    @Override
+    public void clear() {
+        super.clear();
         imageListener.onPixelUnselected();
         currentPixelSelection = null;
-        setImageBitmap(null);
     }
 
     private int toPixelSpeed(float speed) {
@@ -158,6 +160,7 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
     }
 
     private void setPixelColor(int x, int y, int color) {
+        if (!hasBitmap()) return;
         Bitmap bitmap = ((BitmapDrawable) getDrawable()).getBitmap();
         bitmap.setPixel(x, y, color);
     }

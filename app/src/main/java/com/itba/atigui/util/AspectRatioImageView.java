@@ -32,6 +32,11 @@ public class AspectRatioImageView extends ImageView {
         super(context, attrs, defStyle);
     }
 
+    public void clear() {
+        setImageBitmap(null);
+        setImageDrawable(null);
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = 0;

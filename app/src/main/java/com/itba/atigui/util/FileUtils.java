@@ -33,4 +33,9 @@ public class FileUtils {
     public static void refreshGallery() {
         scanFile(getRootFolderPath(), null);
     }
+
+    public static String getFileName(String path) {
+        String[] splits = path.split("/");
+        return splits[splits.length - 1];
+    }
 }

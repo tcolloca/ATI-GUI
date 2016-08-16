@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
@@ -71,6 +72,8 @@ public class ImageActivity extends AppCompatActivity {
     TextView pixelYText;
     @BindView(R.id.activity_image_show_original_text)
     TextView showOriginalText;
+    @BindView(R.id.toolbar_title)
+    TextView toolbarTitle;
 
     private String currentImagePath;
 
@@ -79,7 +82,8 @@ public class ImageActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image);
         ButterKnife.bind(this);
-
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         init();
     }
 
@@ -92,15 +96,16 @@ public class ImageActivity extends AppCompatActivity {
                 pixelColorNumber.setText(String.valueOf(color));
                 pixelXText.setText(String.valueOf(pixel.x));
                 pixelYText.setText(String.valueOf(pixel.y));
+                pixelColorSeekbar.setEnabled(true);
             }
 
             @Override
             public void onPixelUnselected() {
                 pixelColorView.setBackgroundColor(Color.parseColor("#FFFFFFFF"));
-                pixelColorSeekbar.setProgress(0);
                 pixelColorNumber.setText("");
                 pixelXText.setText("");
                 pixelYText.setText("");
+                pixelColorSeekbar.setEnabled(false);
             }
         });
 
@@ -121,11 +126,13 @@ public class ImageActivity extends AppCompatActivity {
         });
 
         FileUtils.refreshGallery();
+        clearAll();
     }
 
     public void loadImage(String path) {
         imageControllerView.unselectCurrentSelectedPixel();
         currentImagePath = path;
+        toolbarTitle.setText(FileUtils.getFileName(path));
 
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
@@ -137,6 +144,16 @@ public class ImageActivity extends AppCompatActivity {
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
         Bitmap originalBitmap = BitmapFactory.decodeFile(path, options);
         originalImage.setImageBitmap(originalBitmap);
+
+        pixelColorSeekbar.setEnabled(true);
+    }
+
+    private void clearAll() {
+        pixelColorSeekbar.setEnabled(false);
+        currentImagePath = null;
+        imageControllerView.clear();
+        originalImage.clear();
+        toolbarTitle.setText(getString(R.string.app_name));
     }
 
     @OnTouch(R.id.activity_image_show_original_button)
@@ -160,12 +177,12 @@ public class ImageActivity extends AppCompatActivity {
     }
 
     //    region BUTTON LISTENERS
-    @OnClick(R.id.activity_image_upload_button)
+    @OnClick(R.id.toolbar_upload)
     void onUploadButtonClick() {
         ImageActivityPermissionsDispatcher.showFileChooserWithCheck(this);
     }
 
-    @OnClick(R.id.activity_image_save_button)
+    @OnClick(R.id.toolbar_save)
     void onSaveButtonClick() {
         if (!imageControllerView.hasBitmap()) {
             Toast.makeText(ImageActivity.this, "nothing to save", Toast.LENGTH_SHORT).show();
@@ -174,7 +191,7 @@ public class ImageActivity extends AppCompatActivity {
         ImageActivityPermissionsDispatcher.showChooseImageNameDialogWithCheck(this);
     }
 
-    @OnClick(R.id.activity_image_delete_button)
+    @OnClick(R.id.toolbar_delete)
     void onDeleteButtonClick() {
         if (currentImagePath == null || !imageControllerView.hasBitmap()) {
             Toast.makeText(ImageActivity.this, "nothing to delete", Toast.LENGTH_SHORT).show();
@@ -182,12 +199,11 @@ public class ImageActivity extends AppCompatActivity {
         }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Delete this image?")
+        builder.setMessage("Delete " + FileUtils.getFileName(currentImagePath) + "?")
                 .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        //do things
-                        imageControllerView.clearBitmap();
                         (new File(currentImagePath)).delete();
+                        clearAll();
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -200,10 +216,9 @@ public class ImageActivity extends AppCompatActivity {
         alert.show();
     }
 
-    @OnClick(R.id.activity_image_clear_button)
+    @OnClick(R.id.toolbar_clear)
     void onClearButtonClick() {
-        currentImagePath = null;
-        imageControllerView.clearBitmap();
+        clearAll();
     }
 //    endregion
 
