@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -16,9 +17,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -73,6 +77,12 @@ public class ImageActivity extends AppCompatActivity {
     TextView showOriginalText;
     @BindView(R.id.toolbar_title)
     TextView toolbarTitle;
+    @BindView(R.id.image_container)
+    FrameLayout imageContainer;
+    @BindView(R.id.activity_image_precision_checkbox)
+    CheckBox precisionCheckbox;
+
+    View rectangleView;
 
     private String currentImagePath;
 
@@ -105,6 +115,26 @@ public class ImageActivity extends AppCompatActivity {
                 pixelXText.setText("");
                 pixelYText.setText("");
                 pixelColorSeekbar.setEnabled(false);
+            }
+
+            @Override
+            public void onRectangleAvailable(PointF p1, PointF p2) {
+                if (rectangleView == null) {
+                    rectangleView = new View(ImageActivity.this);
+                    imageContainer.addView(rectangleView);
+                }
+                float width = p2.x - p1.x;
+                float height = p2.y - p1.y;
+                rectangleView.setLayoutParams(new FrameLayout.LayoutParams((int) width, (int) height));
+                rectangleView.setBackgroundColor(Color.parseColor("#66ff0000"));
+                rectangleView.setX(imageControllerView.getX() + p1.x);
+                rectangleView.setY(imageControllerView.getY() + p1.y);
+            }
+
+            @Override
+            public void onRectangleUnselected() {
+                imageContainer.removeView(rectangleView);
+                rectangleView = null;
             }
         });
 
@@ -154,6 +184,10 @@ public class ImageActivity extends AppCompatActivity {
         imageControllerView.clear();
         originalImage.clear();
         toolbarTitle.setText(getString(R.string.app_name));
+        if (rectangleView != null) {
+            imageContainer.removeView(rectangleView);
+            rectangleView = null;
+        }
     }
 
     @OnTouch(R.id.activity_image_show_original_button)
@@ -163,6 +197,7 @@ public class ImageActivity extends AppCompatActivity {
                 originalImage.setVisibility(View.VISIBLE);
                 showOriginalText.setText("Showing original");
                 view.setBackgroundColor(getResources().getColor(android.R.color.holo_red_light));
+                if (rectangleView != null) rectangleView.setVisibility(View.INVISIBLE);
                 break;
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_OUTSIDE:
@@ -171,6 +206,7 @@ public class ImageActivity extends AppCompatActivity {
                 originalImage.setVisibility(View.GONE);
                 showOriginalText.setText("Show original");
                 view.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_light));
+                if (rectangleView != null) rectangleView.setVisibility(View.VISIBLE);
                 break;
         }
         return false;
@@ -229,6 +265,11 @@ public class ImageActivity extends AppCompatActivity {
     @OnClick(R.id.toolbar_cancel)
     void onCancelButtonClick() {
         imageControllerView.cancel();
+    }
+
+    @OnClick(R.id.activity_image_precision_checkbox)
+    void onPrecisionCheckboxClick() {
+        imageControllerView.setPrecisionMode(precisionCheckbox.isChecked());
     }
 
 //    endregion

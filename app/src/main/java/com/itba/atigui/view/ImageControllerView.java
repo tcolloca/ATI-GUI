@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.drawable.BitmapDrawable;
 import android.support.annotation.NonNull;
 import android.support.v4.view.VelocityTrackerCompat;
@@ -14,7 +15,6 @@ import android.view.VelocityTracker;
 import android.view.View;
 
 import com.itba.atigui.model.PixelSelection;
-import com.itba.atigui.model.RectangleSelection;
 import com.itba.atigui.util.AspectRatioImageView;
 
 public class ImageControllerView extends AspectRatioImageView implements View.OnTouchListener {
@@ -27,7 +27,12 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
     }
 
     private static final String TAG = "ImageControllerView";
-    private static final int THRESHOLD = 500;
+    private static final int ACCURATE_THRESHOLD = 250;
+    private static final int ACCURATE_THRESHOLD2 = 15;
+
+    private static final int NOT_ACCURATE_THRESHOLD = 100;
+    private static final int NOT_ACCURATE_THRESHOLD2 = 1;
+
     private static final int COLOR_FREE = Color.parseColor("#0000ff");
     private static final int COLOR_LOCKED = Color.parseColor("#ff0000");
 
@@ -36,8 +41,14 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
     private PixelSelection firstPixelSelection;
     private PixelSelection secondPixelSelection;
     private PixelSelection currentPixelSelection;
-    private RectangleSelection rectangleSelection;
     private State state = State.TO_SELECT_FIRST;
+
+    private int threshold1;
+    private int threshold2;
+
+    private int xSpeedAcum = 0;
+    private int ySpeedAcum = 0;
+    private boolean precisionModeEnabled;
 
     private ImageListener imageListener = new ImageListener() {
         @Override
@@ -48,16 +59,31 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
         public void onPixelUnselected() {
 
         }
+
+        @Override
+        public void onRectangleAvailable(PointF p1, PointF p2) {
+
+        }
+
+        @Override
+        public void onRectangleUnselected() {
+
+        }
     };
 
     public interface ImageListener {
         void onPixelSelected(Point pixel, int color);
+
         void onPixelUnselected();
-//        void onRectangleConfirmed(Point p1, Point p2);
+
+        void onRectangleAvailable(PointF p1, PointF p2);
+
+        void onRectangleUnselected();
     }
 
     private void init() {
         setOnTouchListener(this);
+        setPrecisionMode(false);
     }
 
     public void setImageListener(@NonNull ImageListener imageListener) {
@@ -94,7 +120,7 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
                     currentPixelSelection = secondPixelSelection;
                     imageListener.onPixelSelected(pixel, getPixelColor(pixel.x, pixel.y));
                     state = State.SELECTING_SECOND;
-                    rectangleSelection = selectRectangle(firstPixelSelection.pixel, secondPixelSelection.pixel);
+                    selectRectangle(firstPixelSelection.pixel, secondPixelSelection.pixel);
                     break;
                 case SELECTING_FIRST:
                 case SELECTING_SECOND:
@@ -107,7 +133,7 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
             velocityTracker.computeCurrentVelocity(1000);
             float xVelocity = VelocityTrackerCompat.getXVelocity(velocityTracker, pointerId);
             float yVelocity = VelocityTrackerCompat.getYVelocity(velocityTracker, pointerId);
-            Point pixelSpeed = new Point(toPixelSpeed(xVelocity), toPixelSpeed(yVelocity));
+            Point pixelSpeed = new Point(xVelToPixelSpeed(xVelocity), yVelToPixelSpeed(yVelocity));
             if (pixelSpeed.x != 0 || pixelSpeed.y != 0) {
                 Point pixel = new Point(currentPixelSelection.pixel);
                 undoPixelSelection(currentPixelSelection);
@@ -122,6 +148,8 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
                 }
                 currentPixelSelection.update(selectPixel(pixel));
                 imageListener.onPixelSelected(pixel, getPixelColor(pixel.x, pixel.y));
+                if (secondPixelSelection != null)
+                    selectRectangle(firstPixelSelection.pixel, secondPixelSelection.pixel);
             }
         } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
             velocityTracker.recycle();
@@ -152,7 +180,7 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
 
     public void check() {
         if (!hasBitmap()) return;
-        switch(state) {
+        switch (state) {
             case SELECTING_FIRST:
                 state = State.TO_SELECT_SECOND;
                 colorPixelSelection(firstPixelSelection, COLOR_LOCKED);
@@ -180,6 +208,7 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
                 state = State.TO_SELECT_SECOND;
                 Point firstPixel = firstPixelSelection.pixel;
                 imageListener.onPixelSelected(firstPixel, getPixelColor(firstPixel.x, firstPixel.y));
+                imageListener.onRectangleUnselected();
                 break;
             case TO_SELECT_SECOND:
 //                TODO: add something to distinguish locked pixels of unlocked
@@ -199,10 +228,49 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
         }
     }
 
-    private int toPixelSpeed(float speed) {
-        if (speed <= -THRESHOLD) return -1;
-        if (speed <= THRESHOLD) return 0;
-        return 1;
+    private int xVelToPixelSpeed(float xSpeed) {
+        if (xSpeed <= -threshold1) xSpeedAcum -= 1;
+        if (xSpeed >= threshold1) xSpeedAcum += 1;
+
+        int step = 3;
+        if (precisionModeEnabled) step = 1;
+        if (xSpeedAcum < -threshold2) {
+            xSpeedAcum = 0;
+            return -step;
+        }
+        if (xSpeedAcum > threshold2) {
+            xSpeedAcum = 0;
+            return step;
+        }
+        return 0;
+    }
+
+    private int yVelToPixelSpeed(float ySpeed) {
+        if (ySpeed <= -threshold1) ySpeedAcum -= 1;
+        if (ySpeed >= threshold1) ySpeedAcum += 1;
+
+        int step = 3;
+        if (precisionModeEnabled) step = 1;
+        if (ySpeedAcum < -threshold2) {
+            ySpeedAcum = 0;
+            return -step;
+        }
+        if (ySpeedAcum > threshold2) {
+            ySpeedAcum = 0;
+            return step;
+        }
+        return 0;
+    }
+
+    public void setPrecisionMode(boolean enabled) {
+        precisionModeEnabled = enabled;
+        if (enabled) {
+            threshold1 = ACCURATE_THRESHOLD;
+            threshold2 = ACCURATE_THRESHOLD2;
+        } else {
+            threshold1 = NOT_ACCURATE_THRESHOLD;
+            threshold2 = NOT_ACCURATE_THRESHOLD2;
+        }
     }
 
     private PixelSelection selectPixel(Point pixel) {
@@ -213,18 +281,10 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
         return pixelSelection;
     }
 
-    private RectangleSelection selectRectangle(Point p1, Point p2) {
+    private void selectRectangle(Point p1, Point p2) {
         Point min = new Point(Math.min(p1.x, p2.x), Math.min(p1.y, p2.y));
         Point max = new Point(Math.max(p1.x, p2.x), Math.max(p1.y, p2.y));
-        int width = max.x - min.x + 1;
-        int height = max.y - min.y + 1;
-        Integer[][] savedColors = new Integer[width][height];
-        for (int i = min.x; i <= max.x; i++) {
-            for (int j = min.y; j <= max.y; j++) {
-
-            }
-        }
-        return new RectangleSelection(p1, p2, savedColors);
+        imageListener.onRectangleAvailable(toScreenCoordinate(min), toScreenCoordinate(max));
     }
 
     private void colorPixelSelection(PixelSelection pixelSelection, int color) {
@@ -263,6 +323,7 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
 
     /**
      * TODO: see what happens with states
+     *
      * @param color goes from 0 to 255
      */
     public void setCurrentPixelColor(int color) {
@@ -295,6 +356,20 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
         int yPixel = (int) (yFactor * bitmap.getHeight());
 
         return new Point(xPixel, yPixel);
+    }
+
+    private PointF toScreenCoordinate(Point pixel) {
+        int x = pixel.x;
+        int y = pixel.y;
+        Bitmap bitmap = ((BitmapDrawable) getDrawable()).getBitmap();
+
+        float xFactor = ((float) x) / bitmap.getWidth();
+        float yFactor = ((float) y) / bitmap.getHeight();
+
+        int xPixel = (int) (xFactor * getWidth());
+        int yPixel = (int) (yFactor * getHeight());
+
+        return new PointF(xPixel, yPixel);
     }
 
     public int getPixelColor(int x, int y) {

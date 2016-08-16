@@ -26,7 +26,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:layout_marginLeft="8dp"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -58,7 +59,14 @@
                 <TextView
                     android:id="@+id/activity_image_pixel_color_number"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:minWidth="28dp"/>
+
+                <CheckBox
+                    android:id="@+id/activity_image_precision_checkbox"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="precision"/>
             </LinearLayout>
 
             <LinearLayout
