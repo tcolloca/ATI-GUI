@@ -79,6 +79,8 @@ public class ImageActivity extends AppCompatActivity {
     TextView pixelHeightText;
     @BindView(R.id.activity_image_show_original_text)
     TextView showOriginalText;
+    @BindView(R.id.activity_image_title)
+    TextView imageTitle;
     @BindView(R.id.toolbar_title)
     TextView toolbarTitle;
     @BindView(R.id.image_container)
@@ -166,12 +168,13 @@ public class ImageActivity extends AppCompatActivity {
 
         FileUtils.refreshGallery();
         clearAll();
+        toolbarTitle.setText(getString(R.string.app_name));
     }
 
     public void loadImage(String path) {
         clearAll();
         currentImagePath = path;
-        toolbarTitle.setText(FileUtils.getFileName(path));
+        imageTitle.setText(FileUtils.getFileName(path));
 
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
@@ -192,7 +195,7 @@ public class ImageActivity extends AppCompatActivity {
         currentImagePath = null;
         imageControllerView.clear();
         originalImage.clear();
-        toolbarTitle.setText(getString(R.string.app_name));
+        imageTitle.setText(null);
         pixelWidthText.setText(null);
         pixelHeightText.setText(null);
         if (rectangleView != null) {
