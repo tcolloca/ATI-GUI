@@ -16,7 +16,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
@@ -130,7 +129,8 @@ public class ImageActivity extends AppCompatActivity {
     }
 
     public void loadImage(String path) {
-        imageControllerView.unselectCurrentSelectedPixel();
+        imageControllerView.clear();
+        originalImage.clear();
         currentImagePath = path;
         toolbarTitle.setText(FileUtils.getFileName(path));
 
@@ -220,6 +220,17 @@ public class ImageActivity extends AppCompatActivity {
     void onClearButtonClick() {
         clearAll();
     }
+
+    @OnClick(R.id.toolbar_check)
+    void onCheckButtonClick() {
+        imageControllerView.check();
+    }
+
+    @OnClick(R.id.toolbar_cancel)
+    void onCancelButtonClick() {
+        imageControllerView.cancel();
+    }
+
 //    endregion
 
     //    region SAVE-IMAGE

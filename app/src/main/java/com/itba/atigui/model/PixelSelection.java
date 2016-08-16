@@ -10,4 +10,14 @@ public class PixelSelection {
         this.pixel = pixel;
         this.savedColors = savedColors;
     }
+
+    public void update(PixelSelection pixelSelection) {
+        this.pixel = pixelSelection.pixel;
+        this.savedColors = pixelSelection.savedColors;
+    }
+
+    public void update(Point pixel, Integer[][] savedColors) {
+        this.pixel = pixel;
+        this.savedColors = savedColors;
+    }
 }
