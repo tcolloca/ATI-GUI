@@ -159,8 +159,7 @@ public class ImageActivity extends AppCompatActivity {
     }
 
     public void loadImage(String path) {
-        imageControllerView.clear();
-        originalImage.clear();
+        clearAll();
         currentImagePath = path;
         toolbarTitle.setText(FileUtils.getFileName(path));
 
@@ -224,7 +223,7 @@ public class ImageActivity extends AppCompatActivity {
             Toast.makeText(ImageActivity.this, "nothing to save", Toast.LENGTH_SHORT).show();
             return;
         }
-        ImageActivityPermissionsDispatcher.showChooseImageNameDialogWithCheck(this);
+        ImageActivityPermissionsDispatcher.showChooseImageNameDialogWithCheck(this, ((BitmapDrawable) imageControllerView.getDrawable()).getBitmap());
     }
 
     @OnClick(R.id.toolbar_delete)
@@ -252,9 +251,15 @@ public class ImageActivity extends AppCompatActivity {
         alert.show();
     }
 
-    @OnClick(R.id.toolbar_clear)
-    void onClearButtonClick() {
-        clearAll();
+    @OnClick(R.id.toolbar_export)
+    void onExportButtonClick() {
+        if (!imageControllerView.isReadyToExport()) {
+            Toast.makeText(ImageActivity.this, "cant export yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Bitmap croppedBitmap = imageControllerView.getBitmapInRectangle();
+        ImageActivityPermissionsDispatcher.showChooseImageNameDialogWithCheck(this, croppedBitmap);
     }
 
     @OnClick(R.id.toolbar_check)
@@ -276,7 +281,7 @@ public class ImageActivity extends AppCompatActivity {
 
     //    region SAVE-IMAGE
     @NeedsPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-    void showChooseImageNameDialog() {
+    void showChooseImageNameDialog(final Bitmap bitmap) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Choose a name");
 
@@ -295,7 +300,7 @@ public class ImageActivity extends AppCompatActivity {
                     Toast.makeText(ImageActivity.this, "must choose a name!", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                saveCurrentImage(name);
+                saveImage(name, bitmap);
                 dialog.dismiss();
             }
         });
@@ -309,7 +314,7 @@ public class ImageActivity extends AppCompatActivity {
         builder.show();
     }
 
-    void saveCurrentImage(String name) {
+    void saveImage(String name, Bitmap bitmap) {
         if (TextUtils.isEmpty(name)) return;
         imageControllerView.unselectCurrentSelectedPixel();
         String path = FileUtils.getImagesFolderPath() + "/" + name + ".png";
@@ -318,7 +323,6 @@ public class ImageActivity extends AppCompatActivity {
         if (file.exists()) file.delete();
         try {
             OutputStream stream = new FileOutputStream(path);
-            Bitmap bitmap = ((BitmapDrawable) imageControllerView.getDrawable()).getBitmap();
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
             stream.close();
 

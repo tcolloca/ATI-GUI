@@ -381,6 +381,27 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
         return getDrawable() != null;
     }
 
+    public boolean isReadyToExport() {
+        return state == State.DONE;
+    }
+
+    public Bitmap getBitmapInRectangle() {
+        if (!isReadyToExport()) return null;
+        Point p1 = firstPixelSelection.pixel;
+        Point p2 = secondPixelSelection.pixel;
+        Point min = new Point(Math.min(p1.x, p2.x), Math.min(p1.y, p2.y));
+        Point max = new Point(Math.max(p1.x, p2.x), Math.max(p1.y, p2.y));
+        undoPixelSelection(firstPixelSelection);
+        undoPixelSelection(secondPixelSelection);
+
+        int width = max.x - min.x + 1;
+        int height = max.y - min.y + 1;
+
+        Bitmap bitmap = ((BitmapDrawable) getDrawable()).getBitmap();
+        Bitmap croppedBitmap = Bitmap.createBitmap(bitmap, min.x, min.y, width, height);
+        return croppedBitmap;
+    }
+
     //    region needed constructors
     public ImageControllerView(Context context) {
         super(context);

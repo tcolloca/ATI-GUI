@@ -99,7 +99,7 @@
                         android:tint="@android:color/darker_gray" />
 
                     <ImageView
-                        android:id="@+id/toolbar_clear"
+                        android:id="@+id/toolbar_export"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:background="?attr/selectableItemBackground"
@@ -108,7 +108,7 @@
                         android:paddingTop="16dp"
                         android:paddingRight="8dp"
                         android:paddingLeft="8dp"
-                        android:src="@drawable/ic_block_black_24dp"
+                        android:src="@drawable/ic_import_export_black_24dp"
                         android:tint="@android:color/darker_gray" />
                 </LinearLayout>
             </FrameLayout>
