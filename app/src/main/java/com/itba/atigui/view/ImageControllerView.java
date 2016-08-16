@@ -98,6 +98,12 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
         currentPixelSelection = null;
     }
 
+    public void clearBitmap() {
+        imageListener.onPixelUnselected();
+        currentPixelSelection = null;
+        setImageBitmap(null);
+    }
+
     private int toPixelSpeed(float speed) {
         if (speed <= -THRESHOLD) return -1;
         if (speed <= THRESHOLD) return 0;
@@ -175,6 +181,10 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
     public int getPixelColor(int x, int y) {
         Bitmap bitmap = ((BitmapDrawable) getDrawable()).getBitmap();
         return bitmap.getPixel(x, y) & 0xFF;
+    }
+
+    public boolean hasBitmap() {
+        return getDrawable() != null;
     }
 
     //    region needed constructors

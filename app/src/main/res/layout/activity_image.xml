@@ -37,6 +37,24 @@
                 android:foreground="?attr/selectableItemBackground"
                 android:padding="8dp"
                 android:src="@drawable/ic_save_black_24dp" />
+
+            <ImageView
+                android:id="@+id/activity_image_delete_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:padding="8dp"
+                android:src="@drawable/ic_delete_black_24dp" />
+
+            <ImageView
+                android:id="@+id/activity_image_clear_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:padding="8dp"
+                android:src="@drawable/ic_clear_black_24dp" />
         </LinearLayout>
 
         <LinearLayout
@@ -67,28 +85,35 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:minWidth="28dp" />
-        </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <View
-                android:id="@+id/activity_image_pixel_color"
-                android:layout_width="32dp"
-                android:layout_height="32dp" />
-
-            <SeekBar
-                android:id="@+id/activity_image_pixel_color_seekbar"
-                android:layout_width="256dp"
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:max="255" />
+                android:text="color: "/>
 
             <TextView
                 android:id="@+id/activity_image_pixel_color_number"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <View
+                android:id="@+id/activity_image_pixel_color"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="#000000"/>
+
+            <SeekBar
+                android:id="@+id/activity_image_pixel_color_seekbar"
+                android:layout_width="255dp"
+                android:layout_height="wrap_content"
+                android:max="255" />
         </LinearLayout>
     </LinearLayout>
 

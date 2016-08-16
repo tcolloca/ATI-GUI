@@ -1,27 +1,32 @@
 package com.itba.atigui.activity;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.ImageView;
+import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.github.angads25.filepicker.controller.DialogSelectionListener;
+import com.github.angads25.filepicker.model.DialogConfigs;
+import com.github.angads25.filepicker.model.DialogProperties;
+import com.github.angads25.filepicker.view.FilePickerDialog;
 import com.itba.atigui.R;
 import com.itba.atigui.util.AspectRatioImageView;
 import com.itba.atigui.util.FileUtils;
@@ -29,8 +34,9 @@ import com.itba.atigui.view.ImageControllerView;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -66,6 +72,8 @@ public class ImageActivity extends AppCompatActivity {
     @BindView(R.id.activity_image_show_original_text)
     TextView showOriginalText;
 
+    private String currentImagePath;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,11 +96,11 @@ public class ImageActivity extends AppCompatActivity {
 
             @Override
             public void onPixelUnselected() {
-                pixelColorView.setBackgroundColor(Color.rgb(255, 255, 255));
-                pixelColorSeekbar.setProgress(255);
-                pixelColorNumber.setText(String.valueOf(255));
-                pixelXText.setText(String.valueOf(-1));
-                pixelYText.setText(String.valueOf(-1));
+                pixelColorView.setBackgroundColor(Color.parseColor("#FFFFFFFF"));
+                pixelColorSeekbar.setProgress(0);
+                pixelColorNumber.setText("");
+                pixelXText.setText("");
+                pixelYText.setText("");
             }
         });
 
@@ -104,18 +112,30 @@ public class ImageActivity extends AppCompatActivity {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
+
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
             }
         });
+
+        FileUtils.refreshGallery();
     }
 
-    public void loadImage(Bitmap bitmap) {
+    public void loadImage(String path) {
         imageControllerView.unselectCurrentSelectedPixel();
-        Bitmap originalBitmap = bitmap.copy(bitmap.getConfig(), true);
+        currentImagePath = path;
+
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        options.inMutable = true;
+        Bitmap bitmap = BitmapFactory.decodeFile(path, options);
         imageControllerView.setImageBitmap(bitmap);
+
+        options = new BitmapFactory.Options();
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        Bitmap originalBitmap = BitmapFactory.decodeFile(path, options);
         originalImage.setImageBitmap(originalBitmap);
     }
 
@@ -139,41 +159,144 @@ public class ImageActivity extends AppCompatActivity {
         return false;
     }
 
+    //    region BUTTON LISTENERS
     @OnClick(R.id.activity_image_upload_button)
     void onUploadButtonClick() {
         ImageActivityPermissionsDispatcher.showFileChooserWithCheck(this);
     }
 
-    //    region FILE-CHOOSER related code
-    @NeedsPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
-    void showFileChooser() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("image/*");
-        startActivityForResult(intent, PICK_IMAGE);
+    @OnClick(R.id.activity_image_save_button)
+    void onSaveButtonClick() {
+        if (!imageControllerView.hasBitmap()) {
+            Toast.makeText(ImageActivity.this, "nothing to save", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ImageActivityPermissionsDispatcher.showChooseImageNameDialogWithCheck(this);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == PICK_IMAGE && resultCode == Activity.RESULT_OK) {
-            if (data == null) {
-                //Display an error
-                return;
+    @OnClick(R.id.activity_image_delete_button)
+    void onDeleteButtonClick() {
+        if (currentImagePath == null || !imageControllerView.hasBitmap()) {
+            Toast.makeText(ImageActivity.this, "nothing to delete", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Delete this image?")
+                .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        //do things
+                        imageControllerView.clearBitmap();
+                        (new File(currentImagePath)).delete();
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                });
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+    @OnClick(R.id.activity_image_clear_button)
+    void onClearButtonClick() {
+        currentImagePath = null;
+        imageControllerView.clearBitmap();
+    }
+//    endregion
+
+    //    region SAVE-IMAGE
+    @NeedsPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    void showChooseImageNameDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Choose a name");
+
+// Set up the input
+        final EditText input = new EditText(this);
+// Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+// Set up the buttons
+        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String name = input.getText().toString();
+                if (TextUtils.isEmpty(name)) {
+                    Toast.makeText(ImageActivity.this, "must choose a name!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                saveCurrentImage(name);
+                dialog.dismiss();
             }
-            try {
-                InputStream inputStream = getContentResolver().openInputStream(data.getData());
-                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-                options.inMutable = true;
-                Bitmap bitmap = BitmapFactory.decodeStream(inputStream, null, options);
-                loadImage(bitmap);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
             }
+        });
+
+        builder.show();
+    }
+
+    void saveCurrentImage(String name) {
+        if (TextUtils.isEmpty(name)) return;
+        imageControllerView.unselectCurrentSelectedPixel();
+        String path = FileUtils.getImagesFolderPath() + "/" + name + ".png";
+        File file = new File(path);
+        file.mkdirs();
+        if (file.exists()) file.delete();
+        try {
+            OutputStream stream = new FileOutputStream(path);
+            Bitmap bitmap = ((BitmapDrawable) imageControllerView.getDrawable()).getBitmap();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+            stream.close();
+
+            FileUtils.scanFile(file.getPath(), new MediaScannerConnection.OnScanCompletedListener() {
+                public void onScanCompleted(String path, Uri uri) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(ImageActivity.this, "Image saved", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            });
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 //    endregion
 
-    //    region PERMISSION HANDLING
+    //    region FILE-CHOOSER
+    @NeedsPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+    void showFileChooser() {
+        DialogProperties properties = new DialogProperties();
+        properties.selection_mode = DialogConfigs.SINGLE_MODE;
+        properties.selection_type = DialogConfigs.FILE_SELECT;
+        properties.root = new File(FileUtils.getImagesFolderPath());
+        properties.extensions = null;
+
+        FilePickerDialog dialog = new FilePickerDialog(ImageActivity.this, properties);
+
+        dialog.setDialogSelectionListener(new DialogSelectionListener() {
+            @Override
+            public void onSelectedFilePaths(String[] files) {
+                loadImage(files[0]);
+            }
+        });
+
+        dialog.show();
+    }
+//    endregion
+
+    //    region RUN TIME PERMISSIONS
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);

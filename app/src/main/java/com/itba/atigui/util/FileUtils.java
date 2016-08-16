@@ -1,35 +1,36 @@
 package com.itba.atigui.util;
 
-import android.content.Context;
-import android.database.Cursor;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
-import android.print.pdf.PrintedPdfDocument;
+import android.os.Environment;
 
-import java.io.File;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
+import com.itba.atigui.AtiApplication;
 
 public class FileUtils {
-    public static String getPath(Context context, Uri uri) throws URISyntaxException {
-        if ("content".equalsIgnoreCase(uri.getScheme())) {
-            String[] projection = { "_data" };
-            Cursor cursor = null;
+    public static String getRootFolderPath() {
+        return Environment.getExternalStorageDirectory().toString();
+    }
 
-            try {
-                cursor = context.getContentResolver().query(uri, projection, null, null, null);
-                int column_index = cursor.getColumnIndexOrThrow("_data");
-                if (cursor.moveToFirst()) {
-                    return cursor.getString(column_index);
+    public static String getImagesFolderPath() {
+        return getRootFolderPath() + "/images";
+    }
+
+    public static void scanFile(String path, MediaScannerConnection.OnScanCompletedListener listener) {
+        if (listener == null) {
+            listener = new MediaScannerConnection.OnScanCompletedListener() {
+                @Override
+                public void onScanCompleted(String s, Uri uri) {
                 }
-            } catch (Exception e) {
-                // Eat it
-            }
+            };
         }
-        else if ("file".equalsIgnoreCase(uri.getScheme())) {
-            return uri.getPath();
-        }
+        MediaScannerConnection.scanFile(AtiApplication.getInstance(),
+                new String[]{path}, null, listener);
+    }
 
-        return null;
+    /**
+     * used after deleting files
+     */
+    public static void refreshGallery() {
+        scanFile(getRootFolderPath(), null);
     }
 }
