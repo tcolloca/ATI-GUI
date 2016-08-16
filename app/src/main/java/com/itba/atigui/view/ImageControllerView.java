@@ -33,7 +33,7 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
     private static final int NOT_ACCURATE_THRESHOLD = 100;
     private static final int NOT_ACCURATE_THRESHOLD2 = 1;
 
-    private static final int COLOR_FREE = Color.parseColor("#0000ff");
+    private static final int COLOR_FREE = Color.parseColor("#ffdf00");
     private static final int COLOR_LOCKED = Color.parseColor("#ff0000");
 
     private VelocityTracker velocityTracker = VelocityTracker.obtain();
