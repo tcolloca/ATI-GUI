@@ -28,10 +28,16 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
         @Override
         public void onPixelSelected(Point pixel, int color) {
         }
+
+        @Override
+        public void onPixelUnselected() {
+
+        }
     };
 
     public interface ImageListener {
         void onPixelSelected(Point pixel, int color);
+        void onPixelUnselected();
     }
 
     private void init() {
@@ -83,6 +89,13 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
         }
 
         return true;
+    }
+
+    public void unselectCurrentSelectedPixel() {
+        if (currentPixelSelection == null) return;
+        undoPixelSelection(currentPixelSelection);
+        imageListener.onPixelUnselected();
+        currentPixelSelection = null;
     }
 
     private int toPixelSpeed(float speed) {

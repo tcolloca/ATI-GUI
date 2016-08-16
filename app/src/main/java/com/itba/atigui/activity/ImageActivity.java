@@ -1,30 +1,40 @@
 package com.itba.atigui.activity;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.itba.atigui.R;
 import com.itba.atigui.util.AspectRatioImageView;
+import com.itba.atigui.util.FileUtils;
 import com.itba.atigui.view.ImageControllerView;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import butterknife.OnTouch;
 import permissions.dispatcher.NeedsPermission;
 import permissions.dispatcher.OnNeverAskAgain;
@@ -36,6 +46,7 @@ import permissions.dispatcher.RuntimePermissions;
 @RuntimePermissions
 public class ImageActivity extends AppCompatActivity {
 
+    private static final int PICK_IMAGE = 147;
     public static final String TAG = "ImageActivity";
 
     @BindView(R.id.image)
@@ -65,7 +76,6 @@ public class ImageActivity extends AppCompatActivity {
     }
 
     private void init() {
-        ImageActivityPermissionsDispatcher.loadImageWithCheck(this);
         imageControllerView.setImageListener(new ImageControllerView.ImageListener() {
             @Override
             public void onPixelSelected(Point pixel, int color) {
@@ -74,6 +84,15 @@ public class ImageActivity extends AppCompatActivity {
                 pixelColorNumber.setText(String.valueOf(color));
                 pixelXText.setText(String.valueOf(pixel.x));
                 pixelYText.setText(String.valueOf(pixel.y));
+            }
+
+            @Override
+            public void onPixelUnselected() {
+                pixelColorView.setBackgroundColor(Color.rgb(255, 255, 255));
+                pixelColorSeekbar.setProgress(255);
+                pixelColorNumber.setText(String.valueOf(255));
+                pixelXText.setText(String.valueOf(-1));
+                pixelYText.setText(String.valueOf(-1));
             }
         });
 
@@ -93,26 +112,16 @@ public class ImageActivity extends AppCompatActivity {
         });
     }
 
-    @NeedsPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
-    public void loadImage() {
-        File rootPath = Environment.getExternalStorageDirectory().getAbsoluteFile();
-        String imagePath = rootPath + "/images/cameraman.png";
-
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        options.inMutable = true;
-        Bitmap bitmap = BitmapFactory.decodeFile(imagePath, options);
-
-        BitmapFactory.Options originalOptions = new BitmapFactory.Options();
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        Bitmap originalBitmap = BitmapFactory.decodeFile(imagePath, originalOptions);
+    public void loadImage(Bitmap bitmap) {
+        imageControllerView.unselectCurrentSelectedPixel();
+        Bitmap originalBitmap = bitmap.copy(bitmap.getConfig(), true);
         imageControllerView.setImageBitmap(bitmap);
         originalImage.setImageBitmap(originalBitmap);
     }
 
     @OnTouch(R.id.activity_image_show_original_button)
     boolean onShowOriginalButtonTouch(View view, MotionEvent event) {
-        switch(event.getAction()) {
+        switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 originalImage.setVisibility(View.VISIBLE);
                 showOriginalText.setText("Showing original");
@@ -129,6 +138,40 @@ public class ImageActivity extends AppCompatActivity {
         }
         return false;
     }
+
+    @OnClick(R.id.activity_image_upload_button)
+    void onUploadButtonClick() {
+        ImageActivityPermissionsDispatcher.showFileChooserWithCheck(this);
+    }
+
+    //    region FILE-CHOOSER related code
+    @NeedsPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+    void showFileChooser() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        startActivityForResult(intent, PICK_IMAGE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PICK_IMAGE && resultCode == Activity.RESULT_OK) {
+            if (data == null) {
+                //Display an error
+                return;
+            }
+            try {
+                InputStream inputStream = getContentResolver().openInputStream(data.getData());
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+                options.inMutable = true;
+                Bitmap bitmap = BitmapFactory.decodeStream(inputStream, null, options);
+                loadImage(bitmap);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+//    endregion
 
     //    region PERMISSION HANDLING
     @Override
