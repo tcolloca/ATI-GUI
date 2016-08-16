@@ -73,6 +73,10 @@ public class ImageActivity extends AppCompatActivity {
     TextView pixelXText;
     @BindView(R.id.activity_image_pixel_y)
     TextView pixelYText;
+    @BindView(R.id.activity_image_pixel_width)
+    TextView pixelWidthText;
+    @BindView(R.id.activity_image_pixel_height)
+    TextView pixelHeightText;
     @BindView(R.id.activity_image_show_original_text)
     TextView showOriginalText;
     @BindView(R.id.toolbar_title)
@@ -98,6 +102,12 @@ public class ImageActivity extends AppCompatActivity {
 
     private void init() {
         imageControllerView.setImageListener(new ImageControllerView.ImageListener() {
+            @Override
+            public void onNewDimensions(int width, int height) {
+                pixelWidthText.setText(String.valueOf(width));
+                pixelHeightText.setText(String.valueOf(height));
+            }
+
             @Override
             public void onPixelSelected(Point pixel, int color) {
                 pixelColorView.setBackgroundColor(Color.rgb(color, color, color));
@@ -183,6 +193,8 @@ public class ImageActivity extends AppCompatActivity {
         imageControllerView.clear();
         originalImage.clear();
         toolbarTitle.setText(getString(R.string.app_name));
+        pixelWidthText.setText(null);
+        pixelHeightText.setText(null);
         if (rectangleView != null) {
             imageContainer.removeView(rectangleView);
             rectangleView = null;

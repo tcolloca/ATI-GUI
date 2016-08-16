@@ -52,6 +52,11 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
 
     private ImageListener imageListener = new ImageListener() {
         @Override
+        public void onNewDimensions(int width, int height) {
+
+        }
+
+        @Override
         public void onPixelSelected(Point pixel, int color) {
         }
 
@@ -72,6 +77,8 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
     };
 
     public interface ImageListener {
+        void onNewDimensions(int width, int height);
+
         void onPixelSelected(Point pixel, int color);
 
         void onPixelUnselected();
@@ -88,6 +95,13 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
 
     public void setImageListener(@NonNull ImageListener imageListener) {
         this.imageListener = imageListener;
+    }
+
+    @Override
+    public void setImageBitmap(Bitmap bm) {
+        super.setImageBitmap(bm);
+        if (bm != null)
+            imageListener.onNewDimensions(bm.getWidth(), bm.getHeight());
     }
 
     @Override
