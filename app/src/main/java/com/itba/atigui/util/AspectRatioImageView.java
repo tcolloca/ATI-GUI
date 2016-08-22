@@ -1,20 +1,10 @@
 package com.itba.atigui.util;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.Point;
-import android.graphics.drawable.BitmapDrawable;
-import android.support.annotation.NonNull;
-import android.support.v4.view.VelocityTrackerCompat;
+import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.view.MotionEvent;
-import android.view.VelocityTracker;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-
-import com.itba.atigui.model.PixelSelection;
 
 public class AspectRatioImageView extends ImageView {
 
@@ -39,21 +29,19 @@ public class AspectRatioImageView extends ImageView {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int width = 0;
-        int height = 0;
+        if (getDrawable() == null || getParent() == null) {
+            setMeasuredDimension(0, 0);
+            return;
+        }
+        ViewGroup parent = (ViewGroup) getParent();
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        int height = width * getDrawable().getIntrinsicHeight() / getDrawable().getIntrinsicWidth();
 
-        if (getParent() != null) {
-            ViewGroup parent = (ViewGroup) getParent();
-            boolean tallParent = parent.getWidth() <= parent.getHeight();
-            if (getDrawable() != null) {
-                if (tallParent) {
-                    width = MeasureSpec.getSize(widthMeasureSpec);
-                    height = width * getDrawable().getIntrinsicHeight() / getDrawable().getIntrinsicWidth();
-                } else {
-                    height = MeasureSpec.getSize(heightMeasureSpec);
-                    width = height * getDrawable().getIntrinsicWidth() / getDrawable().getIntrinsicHeight();
-                }
-            }
+        Rect rect = new Rect();
+        parent.getGlobalVisibleRect(rect);
+        if (width > rect.width() || height > rect.height()) {
+            height = MeasureSpec.getSize(heightMeasureSpec);
+            width = height * getDrawable().getIntrinsicWidth() / getDrawable().getIntrinsicHeight();
         }
 
         setMeasuredDimension(width, height);

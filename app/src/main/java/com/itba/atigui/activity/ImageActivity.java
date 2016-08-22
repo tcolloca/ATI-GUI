@@ -17,7 +17,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.CheckBox;
@@ -31,7 +30,10 @@ import com.github.angads25.filepicker.controller.DialogSelectionListener;
 import com.github.angads25.filepicker.model.DialogConfigs;
 import com.github.angads25.filepicker.model.DialogProperties;
 import com.github.angads25.filepicker.view.FilePickerDialog;
+import com.goodengineer.atibackend.CompoundImageTransformation;
+import com.goodengineer.atibackend.PaintPixelTransformation;
 import com.itba.atigui.R;
+import com.itba.atigui.model.BitmapImageSource;
 import com.itba.atigui.util.AspectRatioImageView;
 import com.itba.atigui.util.FileUtils;
 import com.itba.atigui.view.ImageControllerView;
@@ -91,6 +93,10 @@ public class ImageActivity extends AppCompatActivity {
     View rectangleView;
 
     private String currentImagePath;
+
+    private BitmapImageSource originalImageSource;
+    private BitmapImageSource mutableImageSource;
+    CompoundImageTransformation transformation = new CompoundImageTransformation();;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -178,16 +184,22 @@ public class ImageActivity extends AppCompatActivity {
 
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        options.inMutable = true;
         Bitmap bitmap = BitmapFactory.decodeFile(path, options);
-        imageControllerView.setImageBitmap(bitmap);
 
-        options = new BitmapFactory.Options();
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        Bitmap originalBitmap = BitmapFactory.decodeFile(path, options);
-        originalImage.setImageBitmap(originalBitmap);
+        originalImageSource = new BitmapImageSource(bitmap);
+        mutableImageSource = (BitmapImageSource) originalImageSource.copy();
+
+        imageControllerView.setImageBitmap(mutableImageSource.getBitmap());
+        originalImage.setImageBitmap(originalImageSource.getBitmap());
 
         pixelColorSeekbar.setEnabled(true);
+
+        transformation.addTransformation(new PaintPixelTransformation(0, 0, 0));
+        transformation.addTransformation(new PaintPixelTransformation(0, 1, 0));
+        transformation.addTransformation(new PaintPixelTransformation(1, 0, 0));
+        transformation.addTransformation(new PaintPixelTransformation(1, 1, 0));
+        transformation.transform(mutableImageSource);
+        imageControllerView.setImageBitmap(mutableImageSource.getBitmap());
     }
 
     private void clearAll() {
@@ -202,6 +214,17 @@ public class ImageActivity extends AppCompatActivity {
             imageContainer.removeView(rectangleView);
             rectangleView = null;
         }
+    }
+
+    /**
+     * call this method as few times as possible.
+     */
+    private void refreshImage() {
+        if (mutableImageSource == null) return;
+        mutableImageSource.dispose();
+        mutableImageSource = (BitmapImageSource) originalImageSource.copy();
+        transformation.transform(mutableImageSource);
+        imageControllerView.setImageBitmap(mutableImageSource.getBitmap());
     }
 
     @OnTouch(R.id.activity_image_show_original_button)
