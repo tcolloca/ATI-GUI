@@ -6,6 +6,8 @@ import android.graphics.Color;
 
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
@@ -41,9 +43,18 @@ public class HistogramDialog extends Dialog {
         }
 
         BarDataSet barDataSet = new BarDataSet(entries, "Colors");
+        barDataSet.setDrawValues(true);
 
         BarData barData = new BarData(barDataSet);
         chart.setData(barData);
+
+        XAxis xAxis = chart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setTextSize(10f);
+        xAxis.setTextColor(Color.RED);
+        xAxis.setDrawAxisLine(true);
+        xAxis.setDrawGridLines(false);
+
         chart.invalidate(); // refresh
         chart.animateY(1500);
     }
