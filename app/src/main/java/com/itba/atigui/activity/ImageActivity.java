@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PointF;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -31,11 +32,16 @@ import com.github.angads25.filepicker.model.DialogConfigs;
 import com.github.angads25.filepicker.model.DialogProperties;
 import com.github.angads25.filepicker.view.FilePickerDialog;
 import com.goodengineer.atibackend.CompoundImageTransformation;
+import com.goodengineer.atibackend.ImageTransformation;
+import com.goodengineer.atibackend.ImageUtils;
 import com.goodengineer.atibackend.PaintPixelTransformation;
 import com.itba.atigui.R;
-import com.itba.atigui.model.BitmapImageSource;
+import com.itba.atigui.model.BitmapImageFactory;
+import com.itba.atigui.model.BlackAndWhiteBitmapImageSource;
 import com.itba.atigui.util.AspectRatioImageView;
+import com.itba.atigui.util.BitmapUtils;
 import com.itba.atigui.util.FileUtils;
+import com.itba.atigui.view.ColorPickerDialog;
 import com.itba.atigui.view.ImageControllerView;
 
 import java.io.File;
@@ -61,14 +67,14 @@ public class ImageActivity extends AppCompatActivity {
     private static final int PICK_IMAGE = 147;
     public static final String TAG = "ImageActivity";
 
-    @BindView(R.id.image)
+    @BindView(R.id.image_controller)
     ImageControllerView imageControllerView;
     @BindView(R.id.image_original)
     AspectRatioImageView originalImage;
+    @BindView(R.id.image_mutable)
+    AspectRatioImageView mutableImage;
     @BindView(R.id.activity_image_pixel_color)
     View pixelColorView;
-    @BindView(R.id.activity_image_pixel_color_seekbar)
-    SeekBar pixelColorSeekbar;
     @BindView(R.id.activity_image_pixel_color_number)
     TextView pixelColorNumber;
     @BindView(R.id.activity_image_pixel_x)
@@ -94,9 +100,10 @@ public class ImageActivity extends AppCompatActivity {
 
     private String currentImagePath;
 
-    private BitmapImageSource originalImageSource;
-    private BitmapImageSource mutableImageSource;
-    CompoundImageTransformation transformation = new CompoundImageTransformation();;
+    private BlackAndWhiteBitmapImageSource originalImageSource;
+    private BlackAndWhiteBitmapImageSource mutableImageSource;
+    CompoundImageTransformation transformation = new CompoundImageTransformation();
+    ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,13 +124,12 @@ public class ImageActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onPixelSelected(Point pixel, int color) {
+            public void onPixelSelected(Point pixel) {
+                int color = mutableImageSource.getPixel(pixel.x, pixel.y);
                 pixelColorView.setBackgroundColor(Color.rgb(color, color, color));
-                pixelColorSeekbar.setProgress(color);
                 pixelColorNumber.setText(String.valueOf(color));
                 pixelXText.setText(String.valueOf(pixel.x));
                 pixelYText.setText(String.valueOf(pixel.y));
-                pixelColorSeekbar.setEnabled(true);
             }
 
             @Override
@@ -132,7 +138,6 @@ public class ImageActivity extends AppCompatActivity {
                 pixelColorNumber.setText("");
                 pixelXText.setText("");
                 pixelYText.setText("");
-                pixelColorSeekbar.setEnabled(false);
             }
 
             @Override
@@ -156,22 +161,6 @@ public class ImageActivity extends AppCompatActivity {
             }
         });
 
-        pixelColorSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
-                imageControllerView.setCurrentPixelColor(progress);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-            }
-        });
-
         FileUtils.refreshGallery();
         clearAll();
         toolbarTitle.setText(getString(R.string.app_name));
@@ -182,28 +171,20 @@ public class ImageActivity extends AppCompatActivity {
         currentImagePath = path;
         imageTitle.setText(FileUtils.getFileName(path));
 
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        Bitmap bitmap = BitmapFactory.decodeFile(path, options);
+        Bitmap bitmap = BitmapUtils.decodeFile(path);
 
-        originalImageSource = new BitmapImageSource(bitmap);
-        mutableImageSource = (BitmapImageSource) originalImageSource.copy();
+        originalImageSource = new BlackAndWhiteBitmapImageSource(bitmap);
+        mutableImageSource = (BlackAndWhiteBitmapImageSource) originalImageSource.copy();
 
-        imageControllerView.setImageBitmap(mutableImageSource.getBitmap());
         originalImage.setImageBitmap(originalImageSource.getBitmap());
+        mutableImage.setImageBitmap(mutableImageSource.getBitmap());
 
-        pixelColorSeekbar.setEnabled(true);
+//        sets transparent bitmap for pixel and area selection
+        imageControllerView.setImageBitmap(BitmapUtils.createTransparent(originalImageSource.getBitmap()));
 
-        transformation.addTransformation(new PaintPixelTransformation(0, 0, 0));
-        transformation.addTransformation(new PaintPixelTransformation(0, 1, 0));
-        transformation.addTransformation(new PaintPixelTransformation(1, 0, 0));
-        transformation.addTransformation(new PaintPixelTransformation(1, 1, 0));
-        transformation.transform(mutableImageSource);
-        imageControllerView.setImageBitmap(mutableImageSource.getBitmap());
     }
 
     private void clearAll() {
-        pixelColorSeekbar.setEnabled(false);
         currentImagePath = null;
         imageControllerView.clear();
         originalImage.clear();
@@ -222,9 +203,21 @@ public class ImageActivity extends AppCompatActivity {
     private void refreshImage() {
         if (mutableImageSource == null) return;
         mutableImageSource.dispose();
-        mutableImageSource = (BitmapImageSource) originalImageSource.copy();
+        mutableImageSource = (BlackAndWhiteBitmapImageSource) originalImageSource.copy();
         transformation.transform(mutableImageSource);
-        imageControllerView.setImageBitmap(mutableImageSource.getBitmap());
+        mutableImage.setImageBitmap(mutableImageSource.getBitmap());
+    }
+
+    private void addTransformation(ImageTransformation imageTransformation) {
+        transformation.addTransformation(imageTransformation);
+        imageTransformation.transform(mutableImageSource);
+        mutableImageSource.normalize();
+        mutableImage.setImageBitmap(mutableImageSource.getBitmap());
+    }
+
+    private void undo() {
+        transformation.removeLastTransformation();
+        refreshImage();
     }
 
     @OnTouch(R.id.activity_image_show_original_button)
@@ -296,8 +289,14 @@ public class ImageActivity extends AppCompatActivity {
             return;
         }
 
-        Bitmap croppedBitmap = imageControllerView.getBitmapInRectangle();
-        ImageActivityPermissionsDispatcher.showChooseImageNameDialogWithCheck(this, croppedBitmap);
+        Rect rect = imageControllerView.getSelectedRectangle();
+        BlackAndWhiteBitmapImageSource croppedImageSource = (BlackAndWhiteBitmapImageSource) ImageUtils.crop(mutableImageSource, rect.left, rect.top, rect.width(), rect.height(), new BitmapImageFactory());
+        ImageActivityPermissionsDispatcher.showChooseImageNameDialogWithCheck(this, croppedImageSource.getBitmap() );
+    }
+
+    @OnClick(R.id.toolbar_undo)
+    void onUndoButtonClick() {
+        undo();
     }
 
     @OnClick(R.id.toolbar_check)
@@ -313,6 +312,19 @@ public class ImageActivity extends AppCompatActivity {
     @OnClick(R.id.activity_image_precision_checkbox)
     void onPrecisionCheckboxClick() {
         imageControllerView.setPrecisionMode(precisionCheckbox.isChecked());
+    }
+
+    @OnClick(R.id.activity_image_pixel_color)
+    void onPixelColorBoxClick() {
+        if (imageControllerView.getCurrentPixel() == null) return;
+        final Point currentPixel = imageControllerView.getCurrentPixel();
+        int initialColor = mutableImageSource.getPixel(currentPixel.x, currentPixel.y);
+        new ColorPickerDialog(this, initialColor, new ColorPickerDialog.Listener() {
+            @Override
+            public void onColorAvailable(int color) {
+                addTransformation(new PaintPixelTransformation(currentPixel.x, currentPixel.y, color));
+            }
+        }).show();
     }
 
 //    endregion

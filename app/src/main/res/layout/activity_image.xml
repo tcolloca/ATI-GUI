@@ -131,12 +131,6 @@
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:background="#000000" />
-
-                <SeekBar
-                    android:id="@+id/activity_image_pixel_color_seekbar"
-                    android:layout_width="255dp"
-                    android:layout_height="wrap_content"
-                    android:max="255" />
             </LinearLayout>
         </LinearLayout>
 
@@ -146,8 +140,16 @@
             android:layout_height="0dp"
             android:layout_weight="1">
 
+            <com.itba.atigui.util.AspectRatioImageView
+                android:id="@+id/image_mutable"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:adjustViewBounds="true"
+                android:scaleType="fitStart" />
+
             <com.itba.atigui.view.ImageControllerView
-                android:id="@+id/image"
+                android:id="@+id/image_controller"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_gravity="center"

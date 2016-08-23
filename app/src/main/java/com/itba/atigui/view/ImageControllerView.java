@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PointF;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.support.annotation.NonNull;
 import android.support.v4.view.VelocityTrackerCompat;
@@ -57,7 +58,7 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
         }
 
         @Override
-        public void onPixelSelected(Point pixel, int color) {
+        public void onPixelSelected(Point pixel) {
         }
 
         @Override
@@ -79,7 +80,7 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
     public interface ImageListener {
         void onNewDimensions(int width, int height);
 
-        void onPixelSelected(Point pixel, int color);
+        void onPixelSelected(Point pixel);
 
         void onPixelUnselected();
 
@@ -125,14 +126,14 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
                     pixel = toPixel(event.getX(), event.getY());
                     firstPixelSelection = selectPixel(pixel);
                     currentPixelSelection = firstPixelSelection;
-                    imageListener.onPixelSelected(pixel, getPixelColor(pixel.x, pixel.y));
+                    imageListener.onPixelSelected(pixel);
                     state = State.SELECTING_FIRST;
                     break;
                 case TO_SELECT_SECOND:
                     pixel = toPixel(event.getX(), event.getY());
                     secondPixelSelection = selectPixel(pixel);
                     currentPixelSelection = secondPixelSelection;
-                    imageListener.onPixelSelected(pixel, getPixelColor(pixel.x, pixel.y));
+                    imageListener.onPixelSelected(pixel);
                     state = State.SELECTING_SECOND;
                     selectRectangle(firstPixelSelection.pixel, secondPixelSelection.pixel);
                     break;
@@ -161,7 +162,7 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
                     return true;
                 }
                 currentPixelSelection.update(selectPixel(pixel));
-                imageListener.onPixelSelected(pixel, getPixelColor(pixel.x, pixel.y));
+                imageListener.onPixelSelected(pixel);
                 if (secondPixelSelection != null)
                     selectRectangle(firstPixelSelection.pixel, secondPixelSelection.pixel);
             }
@@ -221,7 +222,7 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
                 currentPixelSelection = firstPixelSelection;
                 state = State.TO_SELECT_SECOND;
                 Point firstPixel = firstPixelSelection.pixel;
-                imageListener.onPixelSelected(firstPixel, getPixelColor(firstPixel.x, firstPixel.y));
+                imageListener.onPixelSelected(firstPixel);
                 imageListener.onRectangleUnselected();
                 break;
             case TO_SELECT_SECOND:
@@ -336,27 +337,6 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
     }
 
     /**
-     * TODO: see what happens with states
-     *
-     * @param color goes from 0 to 255
-     */
-    public void setCurrentPixelColor(int color) {
-        if (currentPixelSelection == null) {
-            Log.e(TAG, "attempting to change pixel color when there is none selected!");
-            return;
-        }
-        Point pixel = currentPixelSelection.pixel;
-        setBitmapPixelColor(pixel.x, pixel.y, Color.rgb(color, color, color));
-        imageListener.onPixelSelected(pixel, color);
-    }
-
-    private void setBitmapPixelColor(int x, int y, int color) {
-        if (!hasBitmap()) return;
-        Bitmap bitmap = ((BitmapDrawable) getDrawable()).getBitmap();
-        bitmap.setPixel(x, y, color);
-    }
-
-    /**
      * Doesn't need to be accurate.
      * Swipe feature will provide accuracy.
      */
@@ -386,11 +366,6 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
         return new PointF(xPixel, yPixel);
     }
 
-    public int getPixelColor(int x, int y) {
-        Bitmap bitmap = ((BitmapDrawable) getDrawable()).getBitmap();
-        return bitmap.getPixel(x, y) & 0xFF;
-    }
-
     public boolean hasBitmap() {
         return getDrawable() != null;
     }
@@ -399,21 +374,18 @@ public class ImageControllerView extends AspectRatioImageView implements View.On
         return state == State.DONE;
     }
 
-    public Bitmap getBitmapInRectangle() {
+    public Rect getSelectedRectangle() {
         if (!isReadyToExport()) return null;
         Point p1 = firstPixelSelection.pixel;
         Point p2 = secondPixelSelection.pixel;
         Point min = new Point(Math.min(p1.x, p2.x), Math.min(p1.y, p2.y));
         Point max = new Point(Math.max(p1.x, p2.x), Math.max(p1.y, p2.y));
-        undoPixelSelection(firstPixelSelection);
-        undoPixelSelection(secondPixelSelection);
+        return new Rect(min.x, min.y, max.x, max.y);
+    }
 
-        int width = max.x - min.x + 1;
-        int height = max.y - min.y + 1;
-
-        Bitmap bitmap = ((BitmapDrawable) getDrawable()).getBitmap();
-        Bitmap croppedBitmap = Bitmap.createBitmap(bitmap, min.x, min.y, width, height);
-        return croppedBitmap;
+    public Point getCurrentPixel() {
+        if (currentPixelSelection == null) return null;
+        return currentPixelSelection.pixel;
     }
 
     //    region needed constructors
