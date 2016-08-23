@@ -32,6 +32,7 @@ import com.github.angads25.filepicker.model.DialogProperties;
 import com.github.angads25.filepicker.view.FilePickerDialog;
 import com.goodengineer.atibackend.ImageUtils;
 import com.goodengineer.atibackend.transformation.CompoundImageTransformation;
+import com.goodengineer.atibackend.transformation.ConstrastTransformation;
 import com.goodengineer.atibackend.transformation.DynamicRangeCompressionTransformation;
 import com.goodengineer.atibackend.transformation.ImageTransformation;
 import com.goodengineer.atibackend.transformation.NegativeTransformation;
@@ -50,6 +51,7 @@ import com.itba.atigui.view.ColorPickerDialog;
 import com.itba.atigui.view.HistogramDialog;
 import com.itba.atigui.view.ImageControllerView;
 import com.itba.atigui.view.NumberPickerDialog;
+import com.itba.atigui.view.RangePickerDialog;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -421,6 +423,17 @@ public class ImageActivity extends AppCompatActivity {
     void onDynamicRangeCompressionTransformationButtonClick() {
         if (!imageControllerView.hasBitmap()) return;
         addTransformation(new DynamicRangeCompressionTransformation());
+    }
+
+    @OnClick(R.id.activity_image_contrast_transformation_button)
+    void onContrastTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+        new RangePickerDialog(this, new RangePickerDialog.Listener() {
+            @Override
+            public void onRangeAvailable(int left, int right) {
+                addTransformation(new ConstrastTransformation(left, right));
+            }
+        }).show();
     }
 
 //    endregion
