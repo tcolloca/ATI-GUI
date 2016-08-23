@@ -47,6 +47,7 @@ import com.itba.atigui.util.AspectRatioImageView;
 import com.itba.atigui.util.BitmapUtils;
 import com.itba.atigui.util.FileUtils;
 import com.itba.atigui.view.ColorPickerDialog;
+import com.itba.atigui.view.HistogramDialog;
 import com.itba.atigui.view.ImageControllerView;
 import com.itba.atigui.view.NumberPickerDialog;
 
@@ -319,6 +320,12 @@ public class ImageActivity extends AppCompatActivity {
                 });
         AlertDialog alert = builder.create();
         alert.show();
+    }
+
+    @OnClick(R.id.toolbar_histogram)
+    void onHistogramButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+        new HistogramDialog(this, ImageUtils.createHistogram(mutableImageSource)).show();
     }
 
     @OnClick(R.id.toolbar_export)
