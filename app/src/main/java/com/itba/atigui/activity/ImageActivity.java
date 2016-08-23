@@ -32,6 +32,7 @@ import com.github.angads25.filepicker.model.DialogProperties;
 import com.github.angads25.filepicker.view.FilePickerDialog;
 import com.goodengineer.atibackend.ImageUtils;
 import com.goodengineer.atibackend.transformation.CompoundImageTransformation;
+import com.goodengineer.atibackend.transformation.DynamicRangeCompressionTransformation;
 import com.goodengineer.atibackend.transformation.ImageTransformation;
 import com.goodengineer.atibackend.transformation.NegativeTransformation;
 import com.goodengineer.atibackend.transformation.PaintPixelTransformation;
@@ -407,6 +408,12 @@ public class ImageActivity extends AppCompatActivity {
                 addTransformation(new ScaleTransformation(number));
             }
         }).show();
+    }
+
+    @OnClick(R.id.activity_image_drc_transformation_button)
+    void onDynamicRangeCompressionTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+        addTransformation(new DynamicRangeCompressionTransformation());
     }
 
 //    endregion

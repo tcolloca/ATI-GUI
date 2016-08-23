@@ -162,6 +162,14 @@
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:src="@drawable/ic_trending_up_black_24dp"
+                    android:background="@android:color/white"
+                    android:layout_marginRight="8dp"/>
+
+                <ImageView
+                    android:id="@+id/activity_image_drc_transformation_button"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_settings_input_composite_black_24dp"
                     android:background="@android:color/white"/>
             </LinearLayout>
         </LinearLayout>
