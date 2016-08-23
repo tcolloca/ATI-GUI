@@ -1,9 +1,9 @@
 package com.itba.atigui.activity;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PointF;
@@ -23,7 +23,6 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,11 +30,16 @@ import com.github.angads25.filepicker.controller.DialogSelectionListener;
 import com.github.angads25.filepicker.model.DialogConfigs;
 import com.github.angads25.filepicker.model.DialogProperties;
 import com.github.angads25.filepicker.view.FilePickerDialog;
-import com.goodengineer.atibackend.CompoundImageTransformation;
-import com.goodengineer.atibackend.ImageTransformation;
 import com.goodengineer.atibackend.ImageUtils;
-import com.goodengineer.atibackend.PaintPixelTransformation;
+import com.goodengineer.atibackend.transformation.CompoundImageTransformation;
+import com.goodengineer.atibackend.transformation.ImageTransformation;
+import com.goodengineer.atibackend.transformation.NegativeTransformation;
+import com.goodengineer.atibackend.transformation.PaintPixelTransformation;
+import com.goodengineer.atibackend.transformation.RectBorderTransformation;
+import com.goodengineer.atibackend.transformation.ScaleTransformation;
+import com.goodengineer.atibackend.transformation.ThresholdingTransformation;
 import com.itba.atigui.R;
+import com.itba.atigui.async.BackgroundTask;
 import com.itba.atigui.model.BitmapImageFactory;
 import com.itba.atigui.model.BlackAndWhiteBitmapImageSource;
 import com.itba.atigui.util.AspectRatioImageView;
@@ -43,6 +47,7 @@ import com.itba.atigui.util.BitmapUtils;
 import com.itba.atigui.util.FileUtils;
 import com.itba.atigui.view.ColorPickerDialog;
 import com.itba.atigui.view.ImageControllerView;
+import com.itba.atigui.view.NumberPickerDialog;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -73,7 +78,7 @@ public class ImageActivity extends AppCompatActivity {
     AspectRatioImageView originalImage;
     @BindView(R.id.image_mutable)
     AspectRatioImageView mutableImage;
-    @BindView(R.id.activity_image_pixel_color)
+    @BindView(R.id.activity_image_paint_pixel_transformation_button)
     View pixelColorView;
     @BindView(R.id.activity_image_pixel_color_number)
     TextView pixelColorNumber;
@@ -103,7 +108,6 @@ public class ImageActivity extends AppCompatActivity {
     private BlackAndWhiteBitmapImageSource originalImageSource;
     private BlackAndWhiteBitmapImageSource mutableImageSource;
     CompoundImageTransformation transformation = new CompoundImageTransformation();
-    ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -203,16 +207,50 @@ public class ImageActivity extends AppCompatActivity {
     private void refreshImage() {
         if (mutableImageSource == null) return;
         mutableImageSource.dispose();
-        mutableImageSource = (BlackAndWhiteBitmapImageSource) originalImageSource.copy();
-        transformation.transform(mutableImageSource);
-        mutableImage.setImageBitmap(mutableImageSource.getBitmap());
+
+        final ProgressDialog progress = new ProgressDialog(this);
+        progress.setTitle("Undo");
+        progress.setMessage("Wait while the undo is performed...");
+        progress.setCancelable(false);
+        progress.show();
+
+        new BackgroundTask(new BackgroundTask.Callback() {
+            @Override
+            public void onBackground() {
+                mutableImageSource = (BlackAndWhiteBitmapImageSource) originalImageSource.copy();
+                transformation.transform(mutableImageSource);
+            }
+
+            @Override
+            public void onUiThread() {
+                mutableImage.setImageBitmap(mutableImageSource.getBitmap());
+                progress.dismiss();
+            }
+        }).execute();
     }
 
-    private void addTransformation(ImageTransformation imageTransformation) {
+    private void addTransformation(final ImageTransformation imageTransformation) {
         transformation.addTransformation(imageTransformation);
-        imageTransformation.transform(mutableImageSource);
-        mutableImageSource.normalize();
-        mutableImage.setImageBitmap(mutableImageSource.getBitmap());
+
+        final ProgressDialog progress = new ProgressDialog(this);
+        progress.setTitle("Add transformation");
+        progress.setMessage("Wait while the transformation is added...");
+        progress.setCancelable(false);
+        progress.show();
+
+        new BackgroundTask(new BackgroundTask.Callback() {
+            @Override
+            public void onBackground() {
+                imageTransformation.transform(mutableImageSource);
+                mutableImageSource.normalize();
+            }
+
+            @Override
+            public void onUiThread() {
+                mutableImage.setImageBitmap(mutableImageSource.getBitmap());
+                progress.dismiss();
+            }
+        }).execute();
     }
 
     private void undo() {
@@ -314,8 +352,8 @@ public class ImageActivity extends AppCompatActivity {
         imageControllerView.setPrecisionMode(precisionCheckbox.isChecked());
     }
 
-    @OnClick(R.id.activity_image_pixel_color)
-    void onPixelColorBoxClick() {
+    @OnClick(R.id.activity_image_paint_pixel_transformation_button)
+    void onPaintPixelTransformationButtonClick() {
         if (imageControllerView.getCurrentPixel() == null) return;
         final Point currentPixel = imageControllerView.getCurrentPixel();
         int initialColor = mutableImageSource.getPixel(currentPixel.x, currentPixel.y);
@@ -323,6 +361,50 @@ public class ImageActivity extends AppCompatActivity {
             @Override
             public void onColorAvailable(int color) {
                 addTransformation(new PaintPixelTransformation(currentPixel.x, currentPixel.y, color));
+                pixelColorView.setBackgroundColor(Color.rgb(color, color, color));
+            }
+        }).show();
+    }
+
+    @OnClick(R.id.activity_image_draw_rect_transformation_button)
+    void onDrawRectTransformationButtonClick() {
+        if (!imageControllerView.isReadyToExport()) {
+            Toast.makeText(ImageActivity.this, "cant draw rect yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new ColorPickerDialog(this, 0, new ColorPickerDialog.Listener() {
+            @Override
+            public void onColorAvailable(int color) {
+                Rect rect = imageControllerView.getSelectedRectangle();
+                addTransformation(new RectBorderTransformation(rect.left, rect.top, rect.right, rect.bottom, color));
+            }
+        }).show();
+    }
+
+    @OnClick(R.id.activity_image_negative_transformation_button)
+    void onNegativeTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+        addTransformation(new NegativeTransformation());
+    }
+
+    @OnClick(R.id.activity_image_thresholding_transformation_button)
+    void onThresholdingTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+        new ColorPickerDialog(this, 0, new ColorPickerDialog.Listener() {
+            @Override
+            public void onColorAvailable(int color) {
+                addTransformation(new ThresholdingTransformation(color));
+            }
+        }).show();
+    }
+
+    @OnClick(R.id.activity_image_scale_transformation_button)
+    void onScaleTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+        new NumberPickerDialog(this, new NumberPickerDialog.Listener() {
+            @Override
+            public void onNumberAvailable(int number) {
+                addTransformation(new ScaleTransformation(number));
             }
         }).show();
     }

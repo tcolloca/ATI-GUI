@@ -15,8 +15,6 @@ import butterknife.OnClick;
 
 public class ColorPickerDialog extends Dialog {
 
-    private static final String TITLE = "Pick a color";
-
     @BindView(R.id.dialog_color_picker_color)
     View colorView;
     @BindView(R.id.dialog_color_picker_number)
@@ -34,7 +32,6 @@ public class ColorPickerDialog extends Dialog {
     public ColorPickerDialog(Context context, int initialColor, Listener listener) {
         super(context);
         setContentView(R.layout.dialog_color_picker);
-        setTitle(TITLE);
         ButterKnife.bind(this);
         setCanceledOnTouchOutside(true);
         this.initialColor = initialColor;
@@ -68,7 +65,7 @@ public class ColorPickerDialog extends Dialog {
 
     @OnClick(R.id.dialog_color_picker_ok_button)
     void onOkButtonClick() {
-        if (listener != null && initialColor != seekBar.getProgress()) {
+        if (listener != null) {
             listener.onColorAvailable(seekBar.getProgress());
         }
         dismiss();

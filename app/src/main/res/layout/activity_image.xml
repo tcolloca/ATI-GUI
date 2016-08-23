@@ -127,10 +127,42 @@
                 android:orientation="horizontal">
 
                 <View
-                    android:id="@+id/activity_image_pixel_color"
+                    android:id="@+id/activity_image_paint_pixel_transformation_button"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:background="#000000" />
+                    android:background="#000000"
+                    android:layout_marginRight="8dp"/>
+
+                <ImageView
+                    android:id="@+id/activity_image_draw_rect_transformation_button"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_crop_square_black_24dp"
+                    android:background="@android:color/white"
+                    android:layout_marginRight="8dp"/>
+
+                <ImageView
+                    android:id="@+id/activity_image_negative_transformation_button"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_exposure_neg_1_black_24dp"
+                    android:background="@android:color/white"
+                    android:layout_marginRight="8dp"/>
+
+                <ImageView
+                    android:id="@+id/activity_image_thresholding_transformation_button"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_call_split_black_24dp"
+                    android:background="@android:color/white"
+                    android:layout_marginRight="8dp"/>
+
+                <ImageView
+                    android:id="@+id/activity_image_scale_transformation_button"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_trending_up_black_24dp"
+                    android:background="@android:color/white"/>
             </LinearLayout>
         </LinearLayout>
 
