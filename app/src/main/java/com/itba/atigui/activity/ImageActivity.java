@@ -31,27 +31,32 @@ import com.github.angads25.filepicker.model.DialogConfigs;
 import com.github.angads25.filepicker.model.DialogProperties;
 import com.github.angads25.filepicker.view.FilePickerDialog;
 import com.goodengineer.atibackend.ImageUtils;
-import com.goodengineer.atibackend.transformation.CompoundImageTransformation;
+import com.goodengineer.atibackend.model.BlackAndWhiteImage;
+import com.goodengineer.atibackend.transformation.CompoundTransformation;
 import com.goodengineer.atibackend.transformation.ConstrastTransformation;
-import com.goodengineer.atibackend.transformation.DynamicRangeCompressionTransformation;
-import com.goodengineer.atibackend.transformation.ImageTransformation;
+import com.goodengineer.atibackend.transformation.EqualizationTransformation;
 import com.goodengineer.atibackend.transformation.NegativeTransformation;
 import com.goodengineer.atibackend.transformation.PaintPixelTransformation;
+import com.goodengineer.atibackend.transformation.PowerTransformation;
 import com.goodengineer.atibackend.transformation.RectBorderTransformation;
-import com.goodengineer.atibackend.transformation.ScaleTransformation;
 import com.goodengineer.atibackend.transformation.ThresholdingTransformation;
+import com.goodengineer.atibackend.transformation.Transformation;
+import com.goodengineer.atibackend.transformation.filter.MedianFilterTransformation;
+import com.goodengineer.atibackend.transformation.noise.GaussNoiseTransformation;
+import com.goodengineer.atibackend.transformation.noise.SaltAndPepperNoiseTransformation;
+import com.goodengineer.atibackend.translator.BlackAndWhiteImageTranslator;
 import com.itba.atigui.R;
 import com.itba.atigui.async.BackgroundTask;
-import com.itba.atigui.model.BitmapImageFactory;
-import com.itba.atigui.model.BlackAndWhiteBitmapImageSource;
 import com.itba.atigui.util.AspectRatioImageView;
 import com.itba.atigui.util.BitmapUtils;
 import com.itba.atigui.util.FileUtils;
 import com.itba.atigui.view.ColorPickerDialog;
+import com.itba.atigui.view.GaussPickerDialog;
 import com.itba.atigui.view.HistogramDialog;
 import com.itba.atigui.view.ImageControllerView;
 import com.itba.atigui.view.NumberPickerDialog;
 import com.itba.atigui.view.RangePickerDialog;
+import com.itba.atigui.view.SaltPickerDialog;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -109,9 +114,10 @@ public class ImageActivity extends AppCompatActivity {
 
     private String currentImagePath;
 
-    private BlackAndWhiteBitmapImageSource originalImageSource;
-    private BlackAndWhiteBitmapImageSource mutableImageSource;
-    CompoundImageTransformation transformation = new CompoundImageTransformation();
+    CompoundTransformation transformation = new CompoundTransformation();
+
+    private BlackAndWhiteImageTranslator<Bitmap> translator = BitmapUtils.translator();
+    private BlackAndWhiteImage mutableBlackAndWhiteImage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,7 +139,7 @@ public class ImageActivity extends AppCompatActivity {
 
             @Override
             public void onPixelSelected(Point pixel) {
-                int color = mutableImageSource.getPixel(pixel.x, pixel.y);
+                int color = mutableBlackAndWhiteImage.getPixel(pixel.x, pixel.y);
                 pixelColorView.setBackgroundColor(Color.rgb(color, color, color));
                 pixelColorNumber.setText(String.valueOf(color));
                 pixelXText.setText(String.valueOf(pixel.x));
@@ -179,16 +185,16 @@ public class ImageActivity extends AppCompatActivity {
         currentImagePath = path;
         imageTitle.setText(FileUtils.getFileName(path));
 
-        Bitmap bitmap = BitmapUtils.decodeFile(path);
+        Bitmap originalBitmap = BitmapUtils.decodeFile(path);;
+        Bitmap mutableBitmap = BitmapUtils.copy(originalBitmap);
 
-        originalImageSource = new BlackAndWhiteBitmapImageSource(bitmap);
-        mutableImageSource = (BlackAndWhiteBitmapImageSource) originalImageSource.copy();
+        originalImage.setImageBitmap(originalBitmap);
+        mutableImage.setImageBitmap(mutableBitmap);
 
-        originalImage.setImageBitmap(originalImageSource.getBitmap());
-        mutableImage.setImageBitmap(mutableImageSource.getBitmap());
+        mutableBlackAndWhiteImage = translator.translateForward(mutableBitmap);
 
 //        sets transparent bitmap for pixel and area selection
-        imageControllerView.setImageBitmap(BitmapUtils.createTransparent(originalImageSource.getBitmap()));
+        imageControllerView.setImageBitmap(BitmapUtils.createTransparent(originalBitmap));
 
     }
 
@@ -209,8 +215,7 @@ public class ImageActivity extends AppCompatActivity {
      * call this method as few times as possible.
      */
     private void refreshImage() {
-        if (mutableImageSource == null) return;
-        mutableImageSource.dispose();
+        if (mutableBlackAndWhiteImage == null) return;
 
         final ProgressDialog progress = new ProgressDialog(this);
         progress.setTitle("Undo");
@@ -221,19 +226,20 @@ public class ImageActivity extends AppCompatActivity {
         new BackgroundTask(new BackgroundTask.Callback() {
             @Override
             public void onBackground() {
-                mutableImageSource = (BlackAndWhiteBitmapImageSource) originalImageSource.copy();
-                transformation.transform(mutableImageSource);
+                Bitmap newMutableBitmap = ((BitmapDrawable)originalImage.getDrawable()).getBitmap();
+                mutableBlackAndWhiteImage = translator.translateForward(newMutableBitmap);
+                mutableBlackAndWhiteImage.transform(transformation);
             }
 
             @Override
             public void onUiThread() {
-                mutableImage.setImageBitmap(mutableImageSource.getBitmap());
+                mutableImage.setImageBitmap(translator.translateBackward(mutableBlackAndWhiteImage));
                 progress.dismiss();
             }
         }).execute();
     }
 
-    private void addTransformation(final ImageTransformation imageTransformation) {
+    private void addTransformation(final Transformation imageTransformation) {
         transformation.addTransformation(imageTransformation);
 
         final ProgressDialog progress = new ProgressDialog(this);
@@ -245,13 +251,12 @@ public class ImageActivity extends AppCompatActivity {
         new BackgroundTask(new BackgroundTask.Callback() {
             @Override
             public void onBackground() {
-                imageTransformation.transform(mutableImageSource);
-                mutableImageSource.normalize();
+                mutableBlackAndWhiteImage.transform(imageTransformation);
             }
 
             @Override
             public void onUiThread() {
-                mutableImage.setImageBitmap(mutableImageSource.getBitmap());
+                mutableImage.setImageBitmap(translator.translateBackward(mutableBlackAndWhiteImage));
                 progress.dismiss();
             }
         }).execute();
@@ -296,7 +301,7 @@ public class ImageActivity extends AppCompatActivity {
             Toast.makeText(ImageActivity.this, "nothing to save", Toast.LENGTH_SHORT).show();
             return;
         }
-        ImageActivityPermissionsDispatcher.showChooseImageNameDialogWithCheck(this, ((BitmapDrawable) imageControllerView.getDrawable()).getBitmap());
+        ImageActivityPermissionsDispatcher.showChooseImageNameDialogWithCheck(this, translator.translateBackward(mutableBlackAndWhiteImage));
     }
 
     @OnClick(R.id.toolbar_delete)
@@ -327,7 +332,8 @@ public class ImageActivity extends AppCompatActivity {
     @OnClick(R.id.toolbar_histogram)
     void onHistogramButtonClick() {
         if (!imageControllerView.hasBitmap()) return;
-        new HistogramDialog(this, ImageUtils.createHistogram(mutableImageSource)).show();
+        float[] histogram = ImageUtils.createHistogram(mutableBlackAndWhiteImage.getBand());
+        new HistogramDialog(this, histogram).show();
     }
 
     @OnClick(R.id.toolbar_export)
@@ -338,8 +344,8 @@ public class ImageActivity extends AppCompatActivity {
         }
 
         Rect rect = imageControllerView.getSelectedRectangle();
-        BlackAndWhiteBitmapImageSource croppedImageSource = (BlackAndWhiteBitmapImageSource) ImageUtils.crop(mutableImageSource, rect.left, rect.top, rect.width(), rect.height(), new BitmapImageFactory());
-        ImageActivityPermissionsDispatcher.showChooseImageNameDialogWithCheck(this, croppedImageSource.getBitmap() );
+        BlackAndWhiteImage croppedImage = ImageUtils.crop(mutableBlackAndWhiteImage, rect.left, rect.top, rect.width(), rect.height());
+        ImageActivityPermissionsDispatcher.showChooseImageNameDialogWithCheck(this, translator.translateBackward(croppedImage) );
     }
 
     @OnClick(R.id.toolbar_undo)
@@ -366,7 +372,7 @@ public class ImageActivity extends AppCompatActivity {
     void onPaintPixelTransformationButtonClick() {
         if (imageControllerView.getCurrentPixel() == null) return;
         final Point currentPixel = imageControllerView.getCurrentPixel();
-        int initialColor = mutableImageSource.getPixel(currentPixel.x, currentPixel.y);
+        int initialColor = mutableBlackAndWhiteImage.getPixel(currentPixel.x, currentPixel.y);
         new ColorPickerDialog(this, initialColor, new ColorPickerDialog.Listener() {
             @Override
             public void onColorAvailable(int color) {
@@ -414,7 +420,7 @@ public class ImageActivity extends AppCompatActivity {
         new NumberPickerDialog(this, new NumberPickerDialog.Listener() {
             @Override
             public void onNumberAvailable(int number) {
-                addTransformation(new ScaleTransformation(number));
+//                addTransformation(new ScaleTransformation(number));
             }
         }).show();
     }
@@ -422,7 +428,7 @@ public class ImageActivity extends AppCompatActivity {
     @OnClick(R.id.activity_image_drc_transformation_button)
     void onDynamicRangeCompressionTransformationButtonClick() {
         if (!imageControllerView.hasBitmap()) return;
-        addTransformation(new DynamicRangeCompressionTransformation());
+//        addTransformation(new DynamicRangeCompressionTransformation());
     }
 
     @OnClick(R.id.activity_image_contrast_transformation_button)
@@ -432,6 +438,43 @@ public class ImageActivity extends AppCompatActivity {
             @Override
             public void onRangeAvailable(int left, int right) {
                 addTransformation(new ConstrastTransformation(left, right));
+            }
+        }).show();
+    }
+
+    @OnClick(R.id.activity_image_equalization_transformation_button)
+    void onEqualizationTransformationButtonClick() {
+        addTransformation(new EqualizationTransformation());
+    }
+
+    @OnClick(R.id.activity_image_power_transformation_button)
+    void onPowerTransformationButtonClick() {
+        addTransformation(new PowerTransformation(0.5));
+    }
+
+    @OnClick(R.id.activity_image_average_filter_transformation_button)
+    void onAverageFilterTransformationButtonClick() {
+        addTransformation(new MedianFilterTransformation(3));
+    }
+
+    @OnClick(R.id.activity_image_salt_transformation_button)
+    void onSaltTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+        new SaltPickerDialog(this, new SaltPickerDialog.Listener() {
+            @Override
+            public void onSaltAvailable(int percentage, double salt) {
+                addTransformation(new SaltAndPepperNoiseTransformation(percentage, salt, 1 - salt));
+            }
+        }).show();
+    }
+
+    @OnClick(R.id.activity_image_gauss_transformation_button)
+    void onGaussTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+        new GaussPickerDialog(this, new GaussPickerDialog.Listener() {
+            @Override
+            public void onGaussAvailable(int percentage, int sigma) {
+                addTransformation(new GaussNoiseTransformation(percentage, 0, sigma));
             }
         }).show();
     }
@@ -475,7 +518,6 @@ public class ImageActivity extends AppCompatActivity {
 
     void saveImage(String name, Bitmap bitmap) {
         if (TextUtils.isEmpty(name)) return;
-        imageControllerView.unselectCurrentSelectedPixel();
         String path = FileUtils.getImagesFolderPath() + "/" + name + ".png";
         File file = new File(path);
         file.mkdirs();

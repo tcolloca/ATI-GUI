@@ -21,61 +21,56 @@
             android:gravity="left"
             android:orientation="vertical">
 
-            <LinearLayout
-                android:layout_width="wrap_content"
+            <HorizontalScrollView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:layout_marginLeft="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
+                android:layout_marginLeft="8dp">
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="title: " />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                <TextView
-                    android:id="@+id/activity_image_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minWidth="28dp" />
-            </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="title: " />
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:layout_marginLeft="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                    <TextView
+                        android:id="@+id/activity_image_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="28dp"
+                        android:layout_marginRight="16dp"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="width: " />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="width: " />
 
-                <TextView
-                    android:id="@+id/activity_image_pixel_width"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minWidth="28dp" />
+                    <TextView
+                        android:id="@+id/activity_image_pixel_width"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="28dp"
+                        android:layout_marginRight="8dp"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="height: " />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="height: " />
 
-                <TextView
-                    android:id="@+id/activity_image_pixel_height"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minWidth="28dp" />
-            </LinearLayout>
+                    <TextView
+                        android:id="@+id/activity_image_pixel_height"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="28dp" />
+                </LinearLayout>
+            </HorizontalScrollView>
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
                 android:layout_marginLeft="8dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
@@ -120,66 +115,138 @@
                     android:text="precision"/>
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
 
-                <View
-                    android:id="@+id/activity_image_paint_pixel_transformation_button"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:background="#000000"
-                    android:layout_marginRight="8dp"/>
+                    <View
+                        android:id="@+id/activity_image_paint_pixel_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="#000000"
+                        android:layout_marginRight="8dp"/>
 
-                <ImageView
-                    android:id="@+id/activity_image_draw_rect_transformation_button"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_crop_square_black_24dp"
-                    android:background="@android:color/white"
-                    android:layout_marginRight="8dp"/>
+                    <ImageView
+                        android:id="@+id/activity_image_draw_rect_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_crop_square_black_24dp"
+                        android:background="@android:color/white"
+                        android:layout_marginRight="8dp"/>
 
-                <ImageView
-                    android:id="@+id/activity_image_negative_transformation_button"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_exposure_neg_1_black_24dp"
-                    android:background="@android:color/white"
-                    android:layout_marginRight="8dp"/>
+                    <ImageView
+                        android:id="@+id/activity_image_negative_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_exposure_neg_1_black_24dp"
+                        android:background="@android:color/white"
+                        android:layout_marginRight="8dp"/>
 
-                <ImageView
-                    android:id="@+id/activity_image_thresholding_transformation_button"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_call_split_black_24dp"
-                    android:background="@android:color/white"
-                    android:layout_marginRight="8dp"/>
+                    <ImageView
+                        android:id="@+id/activity_image_thresholding_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_call_split_black_24dp"
+                        android:background="@android:color/white"
+                        android:layout_marginRight="8dp"/>
 
-                <ImageView
-                    android:id="@+id/activity_image_scale_transformation_button"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_trending_up_black_24dp"
-                    android:background="@android:color/white"
-                    android:layout_marginRight="8dp"/>
+                    <ImageView
+                        android:id="@+id/activity_image_scale_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_trending_up_black_24dp"
+                        android:background="@android:color/white"
+                        android:layout_marginRight="8dp"/>
 
-                <ImageView
-                    android:id="@+id/activity_image_drc_transformation_button"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_settings_input_composite_black_24dp"
-                    android:background="@android:color/white"
-                    android:layout_marginRight="8dp"/>
+                    <ImageView
+                        android:id="@+id/activity_image_drc_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_settings_input_composite_black_24dp"
+                        android:background="@android:color/white"
+                        android:layout_marginRight="8dp"/>
 
-                <ImageView
-                    android:id="@+id/activity_image_contrast_transformation_button"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_line_weight_black_24dp"
-                    android:background="@android:color/white"/>
-            </LinearLayout>
+                    <ImageView
+                        android:id="@+id/activity_image_contrast_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_line_weight_black_24dp"
+                        android:background="@android:color/white"
+                        android:layout_marginRight="8dp"/>
+
+                    <ImageView
+                        android:id="@+id/activity_image_equalization_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_line_weight_black_24dp"
+                        android:background="@android:color/white"
+                        android:layout_marginRight="8dp"/>
+
+                    <ImageView
+                        android:id="@+id/activity_image_power_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_line_weight_black_24dp"
+                        android:background="@android:color/white"
+                        android:layout_marginRight="8dp"/>
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:id="@+id/activity_image_salt_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/salt"
+                        android:background="@android:color/white"
+                        android:scaleType="fitXY"
+                        android:layout_marginRight="8dp"/>
+
+                    <ImageView
+                        android:id="@+id/activity_image_gauss_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/salt"
+                        android:background="@android:color/white"
+                        android:scaleType="fitXY"/>
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:id="@+id/activity_image_average_filter_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/salt"
+                        android:background="@android:color/white"
+                        android:scaleType="fitXY"
+                        android:layout_marginRight="8dp"/>
+                </LinearLayout>
+            </HorizontalScrollView>
         </LinearLayout>
 
         <FrameLayout
