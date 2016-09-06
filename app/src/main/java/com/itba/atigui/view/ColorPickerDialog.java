@@ -21,6 +21,8 @@ public class ColorPickerDialog extends Dialog {
     TextView numberTextView;
     @BindView(R.id.dialog_color_picker_seekbar)
     SeekBar seekBar;
+    @BindView(R.id.dialog_title)
+    TextView titleTextView;
 
     private int initialColor;
     private Listener listener;
@@ -29,13 +31,14 @@ public class ColorPickerDialog extends Dialog {
         void onColorAvailable(int color);
     }
 
-    public ColorPickerDialog(Context context, int initialColor, Listener listener) {
+    public ColorPickerDialog(Context context, String title, int initialColor, Listener listener) {
         super(context);
         setContentView(R.layout.dialog_color_picker);
         ButterKnife.bind(this);
         setCanceledOnTouchOutside(true);
         this.initialColor = initialColor;
         this.listener = listener;
+        titleTextView.setText(title);
         numberTextView.setText(String.valueOf(initialColor));
         colorView.setBackgroundColor(Color.rgb(initialColor, initialColor, initialColor));
         seekBar.setProgress(initialColor);

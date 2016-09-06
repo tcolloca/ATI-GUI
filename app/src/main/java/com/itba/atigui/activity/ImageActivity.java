@@ -18,6 +18,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.text.TextUtils;
+import android.transition.Slide;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.CheckBox;
@@ -34,6 +36,7 @@ import com.goodengineer.atibackend.ImageUtils;
 import com.goodengineer.atibackend.model.BlackAndWhiteImage;
 import com.goodengineer.atibackend.transformation.CompoundTransformation;
 import com.goodengineer.atibackend.transformation.ConstrastTransformation;
+import com.goodengineer.atibackend.transformation.DynamicRangeCompressionTransformation;
 import com.goodengineer.atibackend.transformation.EqualizationTransformation;
 import com.goodengineer.atibackend.transformation.NegativeTransformation;
 import com.goodengineer.atibackend.transformation.PaintPixelTransformation;
@@ -47,6 +50,7 @@ import com.goodengineer.atibackend.transformation.noise.SaltAndPepperNoiseTransf
 import com.goodengineer.atibackend.translator.BlackAndWhiteImageTranslator;
 import com.itba.atigui.R;
 import com.itba.atigui.async.BackgroundTask;
+import com.itba.atigui.model.SliderInfo;
 import com.itba.atigui.util.AspectRatioImageView;
 import com.itba.atigui.util.BitmapUtils;
 import com.itba.atigui.util.FileUtils;
@@ -54,6 +58,7 @@ import com.itba.atigui.view.ColorPickerDialog;
 import com.itba.atigui.view.GaussPickerDialog;
 import com.itba.atigui.view.HistogramDialog;
 import com.itba.atigui.view.ImageControllerView;
+import com.itba.atigui.view.MultipleSliderDialog;
 import com.itba.atigui.view.NumberPickerDialog;
 import com.itba.atigui.view.RangePickerDialog;
 import com.itba.atigui.view.SaltPickerDialog;
@@ -63,6 +68,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -185,7 +192,8 @@ public class ImageActivity extends AppCompatActivity {
         currentImagePath = path;
         imageTitle.setText(FileUtils.getFileName(path));
 
-        Bitmap originalBitmap = BitmapUtils.decodeFile(path);;
+        Bitmap originalBitmap = BitmapUtils.decodeFile(path);
+        ;
         Bitmap mutableBitmap = BitmapUtils.copy(originalBitmap);
 
         originalImage.setImageBitmap(originalBitmap);
@@ -226,7 +234,7 @@ public class ImageActivity extends AppCompatActivity {
         new BackgroundTask(new BackgroundTask.Callback() {
             @Override
             public void onBackground() {
-                Bitmap newMutableBitmap = ((BitmapDrawable)originalImage.getDrawable()).getBitmap();
+                Bitmap newMutableBitmap = ((BitmapDrawable) originalImage.getDrawable()).getBitmap();
                 mutableBlackAndWhiteImage = translator.translateForward(newMutableBitmap);
                 mutableBlackAndWhiteImage.transform(transformation);
             }
@@ -257,12 +265,17 @@ public class ImageActivity extends AppCompatActivity {
             @Override
             public void onUiThread() {
                 mutableImage.setImageBitmap(translator.translateBackward(mutableBlackAndWhiteImage));
+                Toast.makeText(ImageActivity.this, imageTransformation.getClass().getSimpleName(), Toast.LENGTH_SHORT).show();
                 progress.dismiss();
             }
         }).execute();
     }
 
     private void undo() {
+        if (transformation.isEmpty()) {
+            Toast.makeText(this, "Nothing to undo", Toast.LENGTH_SHORT).show();
+            return;
+        }
         transformation.removeLastTransformation();
         refreshImage();
     }
@@ -345,7 +358,7 @@ public class ImageActivity extends AppCompatActivity {
 
         Rect rect = imageControllerView.getSelectedRectangle();
         BlackAndWhiteImage croppedImage = ImageUtils.crop(mutableBlackAndWhiteImage, rect.left, rect.top, rect.width(), rect.height());
-        ImageActivityPermissionsDispatcher.showChooseImageNameDialogWithCheck(this, translator.translateBackward(croppedImage) );
+        ImageActivityPermissionsDispatcher.showChooseImageNameDialogWithCheck(this, translator.translateBackward(croppedImage));
     }
 
     @OnClick(R.id.toolbar_undo)
@@ -373,7 +386,7 @@ public class ImageActivity extends AppCompatActivity {
         if (imageControllerView.getCurrentPixel() == null) return;
         final Point currentPixel = imageControllerView.getCurrentPixel();
         int initialColor = mutableBlackAndWhiteImage.getPixel(currentPixel.x, currentPixel.y);
-        new ColorPickerDialog(this, initialColor, new ColorPickerDialog.Listener() {
+        new ColorPickerDialog(this, "Paint Pixel", initialColor, new ColorPickerDialog.Listener() {
             @Override
             public void onColorAvailable(int color) {
                 addTransformation(new PaintPixelTransformation(currentPixel.x, currentPixel.y, color));
@@ -388,7 +401,7 @@ public class ImageActivity extends AppCompatActivity {
             Toast.makeText(ImageActivity.this, "cant draw rect yet", Toast.LENGTH_SHORT).show();
             return;
         }
-        new ColorPickerDialog(this, 0, new ColorPickerDialog.Listener() {
+        new ColorPickerDialog(this, "Draw Rect", 0, new ColorPickerDialog.Listener() {
             @Override
             public void onColorAvailable(int color) {
                 Rect rect = imageControllerView.getSelectedRectangle();
@@ -406,7 +419,7 @@ public class ImageActivity extends AppCompatActivity {
     @OnClick(R.id.activity_image_thresholding_transformation_button)
     void onThresholdingTransformationButtonClick() {
         if (!imageControllerView.hasBitmap()) return;
-        new ColorPickerDialog(this, 0, new ColorPickerDialog.Listener() {
+        new ColorPickerDialog(this, "Threshold", 0, new ColorPickerDialog.Listener() {
             @Override
             public void onColorAvailable(int color) {
                 addTransformation(new ThresholdingTransformation(color));
@@ -428,7 +441,7 @@ public class ImageActivity extends AppCompatActivity {
     @OnClick(R.id.activity_image_drc_transformation_button)
     void onDynamicRangeCompressionTransformationButtonClick() {
         if (!imageControllerView.hasBitmap()) return;
-//        addTransformation(new DynamicRangeCompressionTransformation());
+        addTransformation(new DynamicRangeCompressionTransformation());
     }
 
     @OnClick(R.id.activity_image_contrast_transformation_button)
