@@ -44,10 +44,14 @@ import com.goodengineer.atibackend.transformation.PowerTransformation;
 import com.goodengineer.atibackend.transformation.RectBorderTransformation;
 import com.goodengineer.atibackend.transformation.ThresholdingTransformation;
 import com.goodengineer.atibackend.transformation.Transformation;
+import com.goodengineer.atibackend.transformation.filter.FilterTransformation;
 import com.goodengineer.atibackend.transformation.filter.MedianFilterTransformation;
+import com.goodengineer.atibackend.transformation.noise.ExponentialNoiseTransformation;
 import com.goodengineer.atibackend.transformation.noise.GaussNoiseTransformation;
+import com.goodengineer.atibackend.transformation.noise.RayleighNoiseTransformation;
 import com.goodengineer.atibackend.transformation.noise.SaltAndPepperNoiseTransformation;
 import com.goodengineer.atibackend.translator.BlackAndWhiteImageTranslator;
+import com.goodengineer.atibackend.util.MaskFactory;
 import com.itba.atigui.R;
 import com.itba.atigui.async.BackgroundTask;
 import com.itba.atigui.model.SliderInfo;
@@ -69,6 +73,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import butterknife.BindView;
@@ -447,9 +452,17 @@ public class ImageActivity extends AppCompatActivity {
     @OnClick(R.id.activity_image_contrast_transformation_button)
     void onContrastTransformationButtonClick() {
         if (!imageControllerView.hasBitmap()) return;
-        new RangePickerDialog(this, new RangePickerDialog.Listener() {
+        List<SliderInfo> sliderInfos = Arrays.asList(
+                new SliderInfo[]{
+                        new SliderInfo("r1", 255),
+                        new SliderInfo("r2", 255)
+                }
+        );
+        new MultipleSliderDialog(this, "Classic Contrast", sliderInfos, new MultipleSliderDialog.Listener() {
             @Override
-            public void onRangeAvailable(int left, int right) {
+            public void onValuesAvailable(List<Integer> values) {
+                int left = values.get(0);
+                int right = values.get(1);
                 addTransformation(new ConstrastTransformation(left, right));
             }
         }).show();
@@ -462,32 +475,157 @@ public class ImageActivity extends AppCompatActivity {
 
     @OnClick(R.id.activity_image_power_transformation_button)
     void onPowerTransformationButtonClick() {
-        addTransformation(new PowerTransformation(0.5));
-    }
-
-    @OnClick(R.id.activity_image_average_filter_transformation_button)
-    void onAverageFilterTransformationButtonClick() {
-        addTransformation(new MedianFilterTransformation(3));
-    }
-
-    @OnClick(R.id.activity_image_salt_transformation_button)
-    void onSaltTransformationButtonClick() {
         if (!imageControllerView.hasBitmap()) return;
-        new SaltPickerDialog(this, new SaltPickerDialog.Listener() {
+        List<SliderInfo> sliderInfos = Arrays.asList(
+                new SliderInfo[]{
+                        new SliderInfo("gamma (/1000)", 2000)
+                }
+        );
+        new MultipleSliderDialog(this, "Power", sliderInfos, new MultipleSliderDialog.Listener() {
             @Override
-            public void onSaltAvailable(int percentage, double salt) {
-                addTransformation(new SaltAndPepperNoiseTransformation(percentage, salt, 1 - salt));
+            public void onValuesAvailable(List<Integer> values) {
+                double gamma = values.get(0)/2000.0;
+                addTransformation(new PowerTransformation(gamma));
             }
         }).show();
     }
 
-    @OnClick(R.id.activity_image_gauss_transformation_button)
-    void onGaussTransformationButtonClick() {
+    @OnClick(R.id.activity_image_filter_avg_transformation_button)
+    void onAverageFilterTransformationButtonClick() {
         if (!imageControllerView.hasBitmap()) return;
-        new GaussPickerDialog(this, new GaussPickerDialog.Listener() {
+        List<SliderInfo> sliderInfos = Arrays.asList(new SliderInfo[]{new SliderInfo("mask size (2*k + 3)", 9)});
+        new MultipleSliderDialog(this, "Average Filter", sliderInfos, new MultipleSliderDialog.Listener() {
             @Override
-            public void onGaussAvailable(int percentage, int sigma) {
+            public void onValuesAvailable(List<Integer> values) {
+                int maskSize = 2*values.get(0) + 3;
+                addTransformation(new FilterTransformation(MaskFactory.average(maskSize)));
+            }
+        }).show();
+    }
+
+    @OnClick(R.id.activity_image_filter_gauss_transformation_button)
+    void onGaussFilterTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+        List<SliderInfo> sliderInfos = Arrays.asList(
+                new SliderInfo[]{
+                        new SliderInfo("mask size (2*k + 3)", 9),
+                        new SliderInfo("sigma", 30)
+                }
+        );
+        new MultipleSliderDialog(this, "Gauss Filter", sliderInfos, new MultipleSliderDialog.Listener() {
+            @Override
+            public void onValuesAvailable(List<Integer> values) {
+                int maskSize = 2*values.get(0) + 3;
+                int sigma = values.get(1);
+                addTransformation(new FilterTransformation(MaskFactory.gauss(maskSize, sigma)));
+            }
+        }).show();
+    }
+
+    @OnClick(R.id.activity_image_filter_median_transformation_button)
+    void onMedianFilterTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+        List<SliderInfo> sliderInfos = Arrays.asList(new SliderInfo[]{new SliderInfo("mask size (2*k + 3)", 9)});
+        new MultipleSliderDialog(this, "Median Filter", sliderInfos, new MultipleSliderDialog.Listener() {
+            @Override
+            public void onValuesAvailable(List<Integer> values) {
+                int maskSize = 2*values.get(0) + 3;
+                addTransformation(new MedianFilterTransformation(maskSize));
+            }
+        }).show();
+    }
+
+    @OnClick(R.id.activity_image_filter_hipass_transformation_button)
+    void onHipassFilterTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+        List<SliderInfo> sliderInfos = Arrays.asList(new SliderInfo[]{new SliderInfo("mask size (2*k + 3)", 9)});
+        new MultipleSliderDialog(this, "Hipass Filter", sliderInfos, new MultipleSliderDialog.Listener() {
+            @Override
+            public void onValuesAvailable(List<Integer> values) {
+                int maskSize = 2*values.get(0) + 3;
+                addTransformation(new FilterTransformation(MaskFactory.hiPass(maskSize)));
+            }
+        }).show();
+    }
+
+    @OnClick(R.id.activity_image_noise_salt_transformation_button)
+    void onSaltNoiseTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+
+        List<SliderInfo> sliderInfos = Arrays.asList(
+                new SliderInfo[]{
+                        new SliderInfo("percentage", 100),
+                        new SliderInfo("p1 (/1000)", 500)
+                }
+        );
+        new MultipleSliderDialog(this, "Salt & Pepper Noise", sliderInfos, new MultipleSliderDialog.Listener() {
+            @Override
+            public void onValuesAvailable(List<Integer> values) {
+                int percentage = values.get(0);
+                double p1 = values.get(1)/1000.0;
+                addTransformation(new SaltAndPepperNoiseTransformation(percentage, p1, 1 - p1));
+            }
+        }).show();
+    }
+
+    @OnClick(R.id.activity_image_noise_gauss_transformation_button)
+    void onGaussNoiseTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+
+        List<SliderInfo> sliderInfos = Arrays.asList(
+                new SliderInfo[]{
+                        new SliderInfo("percentage", 100),
+                        new SliderInfo("sigma", 30)
+                }
+        );
+        new MultipleSliderDialog(this, "Gauss Noise", sliderInfos, new MultipleSliderDialog.Listener() {
+            @Override
+            public void onValuesAvailable(List<Integer> values) {
+                int percentage = values.get(0);
+                int sigma = values.get(1);
                 addTransformation(new GaussNoiseTransformation(percentage, 0, sigma));
+            }
+        }).show();
+    }
+
+    @OnClick(R.id.activity_image_noise_exp_transformation_button)
+    void onExpNoiseTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+
+        List<SliderInfo> sliderInfos = Arrays.asList(
+                new SliderInfo[]{
+                        new SliderInfo("percentage", 100),
+                        new SliderInfo("lambda", 30)
+                }
+        );
+        new MultipleSliderDialog(this, "Exp Noise", sliderInfos, new MultipleSliderDialog.Listener() {
+            @Override
+            public void onValuesAvailable(List<Integer> values) {
+                int percentage = values.get(0);
+                int lambda = values.get(1);
+//                TODO: check if parameters are in correct range
+                addTransformation(new ExponentialNoiseTransformation(percentage, lambda));
+            }
+        }).show();
+    }
+
+    @OnClick(R.id.activity_image_noise_rayleigh_transformation_button)
+    void onRayleighNoiseTransformationButtonClick() {
+        if (!imageControllerView.hasBitmap()) return;
+
+        List<SliderInfo> sliderInfos = Arrays.asList(
+                new SliderInfo[]{
+                        new SliderInfo("percentage", 100),
+                        new SliderInfo("epsilon", 30)
+                }
+        );
+        new MultipleSliderDialog(this, "Rayleigh Noise", sliderInfos, new MultipleSliderDialog.Listener() {
+            @Override
+            public void onValuesAvailable(List<Integer> values) {
+                int percentage = values.get(0);
+                int epsilon = values.get(1);
+//                TODO: check if parameters are in correct range
+                addTransformation(new RayleighNoiseTransformation(percentage, epsilon));
             }
         }).show();
     }

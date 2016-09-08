@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:gravity="center">
+    android:gravity="top"
+    android:layout_gravity="top">
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -20,20 +21,22 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:padding="32dp"
         android:orientation="vertical"
         android:gravity="center">
 
-        <LinearLayout
-            android:id="@+id/slider_container"
+        <ScrollView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:gravity="center_horizontal"
             android:layout_marginBottom="16dp">
-
-        </LinearLayout>
+            <LinearLayout
+                android:id="@+id/slider_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+        </ScrollView>
 
         <LinearLayout
             android:layout_width="wrap_content"

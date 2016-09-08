@@ -160,7 +160,7 @@
                         android:id="@+id/activity_image_scale_transformation_button"
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:src="@drawable/ic_trending_up_black_24dp"
+                        android:src="@drawable/scalar"
                         android:background="@android:color/white"
                         android:layout_marginRight="8dp"/>
 
@@ -168,7 +168,7 @@
                         android:id="@+id/activity_image_drc_transformation_button"
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:src="@drawable/ic_settings_input_composite_black_24dp"
+                        android:src="@drawable/dynamic_range"
                         android:background="@android:color/white"
                         android:layout_marginRight="8dp"/>
 
@@ -176,7 +176,7 @@
                         android:id="@+id/activity_image_contrast_transformation_button"
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:src="@drawable/ic_line_weight_black_24dp"
+                        android:src="@drawable/contrast"
                         android:background="@android:color/white"
                         android:layout_marginRight="8dp"/>
 
@@ -184,7 +184,7 @@
                         android:id="@+id/activity_image_equalization_transformation_button"
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:src="@drawable/ic_line_weight_black_24dp"
+                        android:src="@drawable/equalize"
                         android:background="@android:color/white"
                         android:layout_marginRight="8dp"/>
 
@@ -192,9 +192,36 @@
                         android:id="@+id/activity_image_power_transformation_button"
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:src="@drawable/ic_line_weight_black_24dp"
+                        android:src="@drawable/pow"
                         android:background="@android:color/white"
                         android:layout_marginRight="8dp"/>
+
+                    <ImageView
+                        android:id="@+id/activity_image_add_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/add"
+                        android:background="@android:color/white"
+                        android:layout_marginRight="8dp"
+                        android:visibility="gone"/>
+
+                    <ImageView
+                        android:id="@+id/activity_image_substract_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/substract"
+                        android:background="@android:color/white"
+                        android:layout_marginRight="8dp"
+                        android:visibility="gone"/>
+
+                    <ImageView
+                        android:id="@+id/activity_image_multiply_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/multiply"
+                        android:background="@android:color/white"
+                        android:layout_marginRight="8dp"
+                        android:visibility="gone"/>
                 </LinearLayout>
             </HorizontalScrollView>
 
@@ -209,19 +236,37 @@
                     android:layout_marginBottom="8dp">
 
                     <ImageView
-                        android:id="@+id/activity_image_salt_transformation_button"
+                        android:id="@+id/activity_image_noise_salt_transformation_button"
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:src="@drawable/salt"
+                        android:src="@drawable/noise_salt_and_pepper"
                         android:background="@android:color/white"
                         android:scaleType="fitXY"
                         android:layout_marginRight="8dp"/>
 
                     <ImageView
-                        android:id="@+id/activity_image_gauss_transformation_button"
+                        android:id="@+id/activity_image_noise_gauss_transformation_button"
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:src="@drawable/salt"
+                        android:src="@drawable/noise_gauss"
+                        android:background="@android:color/white"
+                        android:scaleType="fitXY"
+                        android:layout_marginRight="8dp"/>
+
+                    <ImageView
+                        android:id="@+id/activity_image_noise_exp_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/noise_exp"
+                        android:background="@android:color/white"
+                        android:scaleType="fitXY"
+                        android:layout_marginRight="8dp"/>
+
+                    <ImageView
+                        android:id="@+id/activity_image_noise_rayleigh_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/noise_rayleigh"
                         android:background="@android:color/white"
                         android:scaleType="fitXY"/>
                 </LinearLayout>
@@ -238,10 +283,37 @@
                     android:layout_marginBottom="8dp">
 
                     <ImageView
-                        android:id="@+id/activity_image_average_filter_transformation_button"
+                        android:id="@+id/activity_image_filter_median_transformation_button"
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:src="@drawable/salt"
+                        android:src="@drawable/filter_median"
+                        android:background="@android:color/white"
+                        android:scaleType="fitXY"
+                        android:layout_marginRight="8dp"/>
+
+                    <ImageView
+                        android:id="@+id/activity_image_filter_gauss_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/filter_gauss"
+                        android:background="@android:color/white"
+                        android:scaleType="fitXY"
+                        android:layout_marginRight="8dp"/>
+
+                    <ImageView
+                        android:id="@+id/activity_image_filter_avg_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/filter_avg"
+                        android:background="@android:color/white"
+                        android:scaleType="fitXY"
+                        android:layout_marginRight="8dp"/>
+
+                    <ImageView
+                        android:id="@+id/activity_image_filter_hipass_transformation_button"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/hipass"
                         android:background="@android:color/white"
                         android:scaleType="fitXY"
                         android:layout_marginRight="8dp"/>
